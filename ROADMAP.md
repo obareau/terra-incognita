@@ -36,6 +36,7 @@
 - Enrichissement par frontmatter du vault (`04-LIEUX/*.md` : population, contrôle)
 - Annotations manuelles légères (labels, flèches d'état-major)
 - Publier aussi les relations spatiales entre POI (routes → `connecte`)
+- Publier une fiche vault stub par POI (boucle lore↔carte complète des deux côtés, compatible avec la routine de cohérence nocturne)
 
 ## Références
 
