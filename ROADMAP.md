@@ -10,7 +10,7 @@
 - **Tiles générés par le code** : pixel art 16×16, palette 4 tons (phosphore / sépia / blueprint). Zéro asset externe.
 - **Macros** : prefabs déclarés en ASCII (caserne C.G.U., checkpoint, bloc d'habitation…) posés comme des Lego.
 - **Rendus** : canvas pixel lofi, vue ASCII/TUI, chiptune génératif WebAudio.
-- **Ancrage Atlas** (robotariis-graph, port 5557) : les nœuds canoniques (Sigma-7, Port Alpha…) pilotent la génération via leurs tags et relations.
+- **Ancrage Atlas** (base de lore locale, API sur le port 5557) : les nœuds canoniques (Sigma-7, Port Alpha…) pilotent la génération via leurs tags et relations.
 
 ## Phases
 
@@ -39,6 +39,5 @@
 
 ## Références
 
-- Plan détaillé initial : `~/.claude/plans/concurrent-toasting-kahn.md`
 - Choix retenus/écartés et échecs : [DECISIONS.md](DECISIONS.md)
-- API Atlas : `http://localhost:5557/api/graph` (robotariis-graph)
+- L'Atlas (base de lore) est un outil local privé — API `GET /api/graph`, port 5557, surchargeable via `ATLAS_URL`.

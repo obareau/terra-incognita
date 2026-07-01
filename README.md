@@ -10,8 +10,8 @@
 Terra-Incognita génère des cartes **entièrement procédurales** à trois échelles, dans une esthétique
 Game Boy / écran radar : tiles pixel art 16×16 **dessinés par le code** (zéro asset externe),
 macros « Lego » (caserne C.G.U., checkpoint, marché noir…), vue ASCII/TUI, chiptune génératif,
-et lien **bidirectionnel** avec l'**Atlas** ([obareau/Atlas](https://github.com/obareau/Atlas)) :
-le canon du lore pilote la génération, et les cartes générées enrichissent le canon en retour.
+et lien **bidirectionnel** avec l'**Atlas** (la base de lore locale de l'univers) : le canon
+pilote la génération, et les cartes générées enrichissent le canon en retour.
 
 ![Terra-Incognita — ville sous contrôle C.G.U., palette phosphore](assets/screenshots/hero-city.png)
 
@@ -44,13 +44,9 @@ npm test           # invariants : déterminisme, connexité BSP, mapping Atlas�
 npm run package    # binaire portable (electron-builder)
 ```
 
-L'intégration Atlas est optionnelle : si l'`Atlas` tourne (port 5557), le sélecteur
-« Lieu canonique » se remplit ; sinon l'app retombe sur son cache disque, puis sur le mode libre.
-
-```bash
-# Pour l'Atlas :
-cd ../Atlas && uv run --with flask python app.py    # http://localhost:5557
-```
+L'intégration Atlas est optionnelle : si l'Atlas tourne en local (port 5557, configurable via
+`ATLAS_URL`), le sélecteur « Lieu canonique » se remplit ; sinon l'app retombe sur son cache
+disque, puis sur le mode libre.
 
 ## Utilisation
 
@@ -106,4 +102,4 @@ exactement la même carte, même si le mapping heuristique évolue. La publicati
 - [ROADMAP.md](ROADMAP.md) — phases, jalons, idées post-v1
 - [DECISIONS.md](DECISIONS.md) — choix retenus, **options écartées et pièges rencontrés**
 
-Fait partie de l'écosystème **ROBOTARIIS** ([Atlas](https://github.com/obareau/Atlas), timeline, radio…).
+Fait partie de l'écosystème **ROBOTARIIS** (Atlas, timeline, radio…).
