@@ -25,15 +25,17 @@
 | 6 | Intégration Atlas (API + mapping lore→génération) | Sigma-7 cohérent, fallback cache | ✅ 2026-07-02 (vérifié en ligne + hors-ligne) |
 | 7 | Polish (CRT, raccourcis, packaging) | binaire portable | ✅ 2026-07-02 (AppImage 103 Mo) |
 
-**MVP = phases 0–2 — atteint. v0.1.0 complète.**
-22 tests jest verts. Reste à valider à l'oreille : le chiptune (bouton ▶ CHIPTUNE).
+| 8 | **Lien Atlas bidirectionnel** : PUBLIER VERS L'ATLAS (POI → nœuds `membre` + marqueur canonique dans les notes), lecture prioritaire de la carte canonique ⚓ | testé e2e sur sandbox (DB copiée, port 5599) : 12 nœuds créés, idempotent, carte canonique reproduite à l'identique | ✅ 2026-07-02 |
+
+**MVP = phases 0–2 — atteint. v0.2.0 : Atlas bidirectionnel.**
+29 tests jest verts. Reste à valider à l'oreille : le chiptune (bouton ▶ CHIPTUNE).
 
 ## Après v1 (idées)
 
 - WFC pour le remplissage organique des blocs de ville (v1.5)
 - Enrichissement par frontmatter du vault (`04-LIEUX/*.md` : population, contrôle)
-- Écriture inverse : pousser les POI générés comme nœuds Atlas
 - Annotations manuelles légères (labels, flèches d'état-major)
+- Publier aussi les relations spatiales entre POI (routes → `connecte`)
 
 ## Références
 

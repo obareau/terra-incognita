@@ -1,7 +1,8 @@
 import { app, BrowserWindow, dialog, ipcMain } from "electron";
 import * as path from "node:path";
 import * as fs from "node:fs";
-import { loadAtlas } from "./atlas/client";
+import { loadAtlas, publishToAtlas } from "./atlas/client";
+import type { Publication } from "./core/atlas/publish";
 
 /** Mode vérification : --screenshot=/chemin.png capture la fenêtre puis quitte. */
 const screenshotPath = process.argv.find((a) => a.startsWith("--screenshot="))?.slice("--screenshot=".length);
@@ -54,6 +55,10 @@ function createWindow(): void {
 function registerIpc(): void {
   ipcMain.handle("atlas:load", async () => {
     return loadAtlas(app.getPath("userData"));
+  });
+
+  ipcMain.handle("atlas:publish", async (_e, publication: Publication) => {
+    return publishToAtlas(publication);
   });
 
   ipcMain.handle("export:saveText", async (_e, defaultName: string, content: string) => {

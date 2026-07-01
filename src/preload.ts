@@ -4,6 +4,7 @@ import type { TerraApi } from "./shared/types";
 const api: TerraApi = {
   atlas: {
     load: () => ipcRenderer.invoke("atlas:load"),
+    publish: (publication) => ipcRenderer.invoke("atlas:publish", publication),
   },
   export: {
     saveText: (defaultName, content) => ipcRenderer.invoke("export:saveText", defaultName, content),

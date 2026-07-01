@@ -10,8 +10,8 @@
 Terra-Incognita génère des cartes **entièrement procédurales** à trois échelles, dans une esthétique
 Game Boy / écran radar : tiles pixel art 16×16 **dessinés par le code** (zéro asset externe),
 macros « Lego » (caserne C.G.U., checkpoint, marché noir…), vue ASCII/TUI, chiptune génératif,
-et ancrage sur l'**Atlas** ([robotariis-graph](https://github.com/obareau/robotariis-graph)) pour
-que le canon du lore pilote la génération.
+et lien **bidirectionnel** avec l'**Atlas** ([obareau/Atlas](https://github.com/obareau/Atlas)) :
+le canon du lore pilote la génération, et les cartes générées enrichissent le canon en retour.
 
 ![Terra-Incognita — ville sous contrôle C.G.U., palette phosphore](assets/screenshots/hero-city.png)
 
@@ -57,7 +57,8 @@ cd ../robotariis-graph && uv run app.py    # http://localhost:5557
 | Action | Effet |
 |---|---|
 | **Seed + GÉNÉRER** | même seed = même carte, toujours |
-| **GÉNÉRER DEPUIS L'ATLAS** | le nœud choisi (Sigma-7, Terre…) fixe seed, échelle et paramètres depuis ses tags/relations |
+| **GÉNÉRER DEPUIS L'ATLAS** | le nœud choisi (Sigma-7, Terre…) fixe seed, échelle et paramètres depuis ses tags/relations — ou depuis sa carte canonique ⚓ si elle a été publiée |
+| **PUBLIER VERS L'ATLAS ⇄** | écrit dans l'Atlas : les POI (QG, casernes, marchés, villes…) deviennent des nœuds `lieu` reliés en `membre` au lieu parent, et la carte est **figée comme canon** dans ses notes |
 | Clic sur un **POI encadré** | descend d'échelle : région → ville → intérieur (seed dérivée, déterministe) |
 | `R` / `V` / `F` / `Backspace` | régénérer / basculer pixel↔ASCII / cadrer / remonter |
 | Molette / glisser | zoom (0.25×–4×) / déplacer |
@@ -86,9 +87,19 @@ src/
 └── renderer/        # UI, vue pixel (canvas), vue ASCII, chiptune WebAudio
 ```
 
-Le lien lore→carte se fait dans `core/atlas/mapping.ts` : un lieu `membre` du C.G.U. hérite
-d'une densité militaire élevée ; un tag `voile-ombre` bascule en ambiance clandestine ;
-une `planete` s'ouvre à l'échelle région ; des relations `ennemi` sèment des zones contestées.
+## Lien bidirectionnel avec l'Atlas
+
+**Atlas → carte** (`core/atlas/mapping.ts`) : un lieu `membre` du C.G.U. hérite d'une densité
+militaire élevée ; un tag `voile-ombre` bascule en ambiance clandestine ; une `planete` s'ouvre
+à l'échelle région ; des relations `ennemi` sèment des zones contestées.
+
+**Carte → Atlas** (`core/atlas/publish.ts`) : la publication — **toujours explicite**, jamais
+automatique — crée les POI significatifs comme nœuds canoniques (tag `terra-incognita`,
+relation `membre` vers le lieu parent, seed enfant dans les métadonnées) et écrit un marqueur
+`[terra-incognita] {seed, scale, params}` dans les notes du lieu. Ce marqueur **fige la carte
+canonique** : toute régénération future du lieu (repérée ⚓ dans le sélecteur) reproduira
+exactement la même carte, même si le mapping heuristique évolue. La publication est idempotente
+(ids stables, dédoublonnage côté API).
 
 ## Documents
 

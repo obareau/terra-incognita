@@ -85,12 +85,24 @@ export interface AtlasState {
   graph: AtlasGraph | null;
 }
 
+/** Bilan d'une publication carte → Atlas. */
+export interface PublishResult {
+  ok: boolean;
+  createdNodes: number;
+  skippedNodes: number;
+  relations: number;
+  parentUpdated: boolean;
+  error?: string;
+}
+
 // ── Surface IPC exposée au renderer via preload ──────────────────────
 
 export interface TerraApi {
   atlas: {
     /** Charge le graphe (API si dispo, sinon cache disque). */
     load(): Promise<AtlasState>;
+    /** Publie la carte courante vers l'Atlas (nœuds POI + marqueur canonique). */
+    publish(publication: unknown): Promise<PublishResult>;
   };
   export: {
     /** Ouvre un dialog "enregistrer" et écrit le contenu texte. */

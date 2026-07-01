@@ -4,6 +4,7 @@ import type { Ambiance, AtlasState, GenParams, MapData, PaletteName, Scale, Terr
 import { DEFAULT_PARAMS, childScale, generate } from "../core/generate";
 import { fromJson, toAscii, toJson } from "../core/serialize";
 import { mapNodeToParams } from "../core/atlas/mapping";
+import { buildPublication, parseMarker } from "../core/atlas/publish";
 import { PALETTES } from "../core/palettes";
 import { TILESET } from "../core/tiles/tileset";
 import { CanvasView } from "./canvasView";
@@ -158,18 +159,21 @@ async function loadAtlas(): Promise<void> {
   }
   const a = state.atlas;
   if (a.graph) {
-    status.textContent = a.online ? "ATLAS : EN LIGNE" : "ATLAS : HORS-LIGNE (cache)";
+    status.textContent = a.online ? "ATLAS : EN LIGNE ⇄" : "ATLAS : HORS-LIGNE (cache)";
     status.classList.toggle("online", a.online);
     const select = $<HTMLSelectElement>("atlasNode");
+    const previous = select.value;
+    // Repeuplement idempotent (appelé aussi après une publication).
+    select.replaceChildren(new Option("— mode libre —", ""));
     const places = a.graph.nodes
       .filter((n) => ["lieu", "planete", "systeme"].includes(n.category))
       .sort((x, y) => x.label.localeCompare(y.label));
     for (const n of places) {
-      const opt = document.createElement("option");
-      opt.value = n.id;
-      opt.textContent = `${n.label} (${n.category})`;
-      select.appendChild(opt);
+      const canon = parseMarker(n.notes) ? " ⚓" : "";
+      select.appendChild(new Option(`${n.label} (${n.category})${canon}`, n.id));
     }
+    select.value = previous;
+    if (select.selectedIndex < 0) select.selectedIndex = 0;
   } else {
     status.textContent = "ATLAS : HORS-LIGNE — mode libre";
   }
@@ -181,14 +185,46 @@ function generateFromAtlas(): void {
   if (!a?.graph || !nodeId) return;
   const node = a.graph.nodes.find((n) => n.id === nodeId);
   if (!node) return;
-  const mapped = mapNodeToParams(node, a.graph);
+  // Carte canonique déjà publiée ? Le marqueur [terra-incognita] des notes
+  // du nœud fige seed + échelle + params : l'Atlas fait autorité.
+  const canon = parseMarker(node.notes);
+  const mapped = canon
+    ? { params: canon.params, scale: canon.scale, label: `${node.label} ⚓` }
+    : mapNodeToParams(node, a.graph);
+  const seed = canon?.seed ?? node.id;
   writeParams(mapped.params);
-  $<HTMLInputElement>("seed").value = node.id;
+  $<HTMLInputElement>("seed").value = seed;
   $<HTMLSelectElement>("scale").value = mapped.scale;
   state.stack = [];
-  const map = generate(mapped.scale, node.id, mapped.params);
+  const map = generate(mapped.scale, seed, mapped.params);
   map.atlasRef = { nodeId: node.id, label: node.label };
   setMap(map, mapped.label, true);
+  $("cellInfo").textContent = canon
+    ? `Carte canonique de ${node.label} (figée dans l'Atlas)`
+    : `Carte dérivée du lore de ${node.label}`;
+}
+
+async function publishToAtlas(): Promise<void> {
+  const map = state.map;
+  const info = $("cellInfo");
+  if (!map?.atlasRef) {
+    info.textContent = "Publication impossible : carte non ancrée à un nœud Atlas.";
+    return;
+  }
+  if (!state.atlas?.online) {
+    info.textContent = "Publication impossible : Atlas hors-ligne.";
+    return;
+  }
+  const existing = new Set(state.atlas.graph?.nodes.map((n) => n.id) ?? []);
+  const pub = buildPublication(map, existing);
+  info.textContent = "Publication vers l'Atlas…";
+  const res = await window.terra.atlas.publish(pub);
+  if (res.ok) {
+    info.textContent = `Atlas ⇄ : ${res.createdNodes} nœud(s) créé(s), ${res.skippedNodes} déjà présent(s), ${res.relations} relation(s), carte canonique figée.`;
+    await loadAtlas(); // rafraîchit le graphe local (nouveaux nœuds, marqueur)
+  } else {
+    info.textContent = `Échec de publication : ${res.error ?? "erreur inconnue"}`;
+  }
 }
 
 // ── Interactions souris ──────────────────────────────────────────────
@@ -247,6 +283,7 @@ canvas.addEventListener("wheel", (e) => {
 
 $("btnGenerate").addEventListener("click", generateFromControls);
 $("btnAtlasGen").addEventListener("click", generateFromAtlas);
+$("btnPublish").addEventListener("click", () => void publishToAtlas());
 $("btnUp").addEventListener("click", goUp);
 $("btnFit").addEventListener("click", () => { pixelView.fit(); redraw(); });
 
