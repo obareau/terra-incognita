@@ -1,0 +1,337 @@
+// Orchestration de l'UI : état, contrôles, navigation d'échelles, Atlas.
+
+import type { Ambiance, AtlasState, GenParams, MapData, PaletteName, Scale, TerraApi } from "../shared/types";
+import { DEFAULT_PARAMS, childScale, generate } from "../core/generate";
+import { fromJson, toAscii, toJson } from "../core/serialize";
+import { mapNodeToParams } from "../core/atlas/mapping";
+import { PALETTES } from "../core/palettes";
+import { TILESET } from "../core/tiles/tileset";
+import { CanvasView } from "./canvasView";
+import { AsciiView } from "./asciiView";
+import { Chiptune } from "./chiptune";
+
+declare global {
+  interface Window { terra: TerraApi }
+}
+
+const $ = <T extends HTMLElement>(id: string): T => {
+  const el = document.getElementById(id);
+  if (!el) throw new Error(`#${id} introuvable`);
+  return el as T;
+};
+
+interface Crumb {
+  scale: Scale;
+  seed: string;
+  params: GenParams;
+  label: string;
+}
+
+const state = {
+  map: null as MapData | null,
+  palette: "phosphore" as PaletteName,
+  view: "pixel" as "pixel" | "ascii",
+  stack: [] as Crumb[],
+  atlas: null as AtlasState | null,
+};
+
+const canvas = $<HTMLCanvasElement>("view");
+const pixelView = new CanvasView(canvas);
+const asciiView = new AsciiView(canvas);
+const chiptune = new Chiptune();
+
+// ── Lecture des contrôles ────────────────────────────────────────────
+
+function readParams(): GenParams {
+  return {
+    ...DEFAULT_PARAMS,
+    cguDensity: parseFloat($<HTMLInputElement>("cgu").value),
+    ruin: parseFloat($<HTMLInputElement>("ruin").value),
+    ambiance: $<HTMLSelectElement>("ambiance").value as Ambiance,
+  };
+}
+
+function writeParams(p: GenParams): void {
+  $<HTMLInputElement>("cgu").value = String(p.cguDensity);
+  $<HTMLInputElement>("ruin").value = String(p.ruin);
+  $<HTMLSelectElement>("ambiance").value = p.ambiance;
+  syncSliderLabels();
+}
+
+function syncSliderLabels(): void {
+  $("cguVal").textContent = parseFloat($<HTMLInputElement>("cgu").value).toFixed(2);
+  $("ruinVal").textContent = parseFloat($<HTMLInputElement>("ruin").value).toFixed(2);
+}
+
+// ── Rendu ────────────────────────────────────────────────────────────
+
+// Cadrage auto tant que l'utilisateur n'a pas pris la main (pan/zoom).
+let autoFit = true;
+
+function resizeCanvas(): void {
+  const box = $("viewport").getBoundingClientRect();
+  canvas.width = Math.floor(box.width);
+  canvas.height = Math.floor(box.height);
+  if (autoFit) pixelView.fit();
+  redraw();
+}
+
+function redraw(highlight?: { x: number; y: number } | null): void {
+  if (state.view === "pixel") pixelView.draw(highlight);
+  else asciiView.draw(pixelView.camera);
+}
+
+function applyPaletteToUi(): void {
+  const p = PALETTES[state.palette];
+  const root = document.documentElement.style;
+  p.forEach((c, i) => root.setProperty(`--c${i}`, c));
+}
+
+function setMap(map: MapData, label: string, pushCrumb: boolean): void {
+  state.map = map;
+  if (pushCrumb) {
+    state.stack.push({ scale: map.scale, seed: map.seed, params: map.params, label });
+  }
+  pixelView.setMap(map, state.palette);
+  asciiView.setMap(map, state.palette);
+  autoFit = true;
+  pixelView.fit();
+  updateBreadcrumb();
+  redraw();
+  if (chiptune.playing) chiptune.start(map.seed, map.params.ambiance);
+}
+
+function updateBreadcrumb(): void {
+  const el = $("breadcrumb");
+  el.innerHTML = state.stack
+    .map((c, i) => (i === state.stack.length - 1 ? `<b>${c.label}</b>` : c.label))
+    .join(" ▸ ") || "—";
+  $<HTMLButtonElement>("btnUp").disabled = state.stack.length <= 1;
+}
+
+// ── Génération ───────────────────────────────────────────────────────
+
+function generateFromControls(): void {
+  const seed = $<HTMLInputElement>("seed").value.trim() || "terra";
+  const scale = $<HTMLSelectElement>("scale").value as Scale;
+  const params = readParams();
+  state.stack = [];
+  const map = generate(scale, seed, params);
+  setMap(map, `${seed} [${scale}]`, true);
+}
+
+function descendTo(poiLabel: string, kind: string, childSeed: string): void {
+  if (!state.map) return;
+  const next = childScale(state.map.scale, kind);
+  if (!next) return;
+  const params = { ...state.map.params };
+  if (kind === "base" || kind === "qg" || kind === "caserne") {
+    params.ambiance = "militaire";
+    params.cguDensity = Math.max(params.cguDensity, 0.7);
+  } else if (kind === "usine") {
+    params.ambiance = "industriel";
+  } else if (kind === "ruin") {
+    params.ambiance = "ruine";
+    params.ruin = Math.max(params.ruin, 0.6);
+  }
+  const map = generate(next, childSeed, params);
+  map.atlasRef = state.map.atlasRef;
+  setMap(map, poiLabel, true);
+}
+
+function goUp(): void {
+  if (state.stack.length <= 1) return;
+  state.stack.pop();
+  const crumb = state.stack[state.stack.length - 1];
+  const map = generate(crumb.scale, crumb.seed, crumb.params);
+  setMap(map, crumb.label, false);
+}
+
+// ── Atlas ────────────────────────────────────────────────────────────
+
+async function loadAtlas(): Promise<void> {
+  const status = $("atlasStatus");
+  try {
+    state.atlas = await window.terra.atlas.load();
+  } catch {
+    state.atlas = { online: false, fromCache: false, graph: null };
+  }
+  const a = state.atlas;
+  if (a.graph) {
+    status.textContent = a.online ? "ATLAS : EN LIGNE" : "ATLAS : HORS-LIGNE (cache)";
+    status.classList.toggle("online", a.online);
+    const select = $<HTMLSelectElement>("atlasNode");
+    const places = a.graph.nodes
+      .filter((n) => ["lieu", "planete", "systeme"].includes(n.category))
+      .sort((x, y) => x.label.localeCompare(y.label));
+    for (const n of places) {
+      const opt = document.createElement("option");
+      opt.value = n.id;
+      opt.textContent = `${n.label} (${n.category})`;
+      select.appendChild(opt);
+    }
+  } else {
+    status.textContent = "ATLAS : HORS-LIGNE — mode libre";
+  }
+}
+
+function generateFromAtlas(): void {
+  const a = state.atlas;
+  const nodeId = $<HTMLSelectElement>("atlasNode").value;
+  if (!a?.graph || !nodeId) return;
+  const node = a.graph.nodes.find((n) => n.id === nodeId);
+  if (!node) return;
+  const mapped = mapNodeToParams(node, a.graph);
+  writeParams(mapped.params);
+  $<HTMLInputElement>("seed").value = node.id;
+  $<HTMLSelectElement>("scale").value = mapped.scale;
+  state.stack = [];
+  const map = generate(mapped.scale, node.id, mapped.params);
+  map.atlasRef = { nodeId: node.id, label: node.label };
+  setMap(map, mapped.label, true);
+}
+
+// ── Interactions souris ──────────────────────────────────────────────
+
+let dragging = false;
+let moved = false;
+let last = { x: 0, y: 0 };
+
+canvas.addEventListener("mousedown", (e) => {
+  dragging = true;
+  moved = false;
+  last = { x: e.clientX, y: e.clientY };
+});
+window.addEventListener("mouseup", () => { dragging = false; });
+canvas.addEventListener("mousemove", (e) => {
+  if (dragging) {
+    const dx = e.clientX - last.x;
+    const dy = e.clientY - last.y;
+    if (Math.abs(dx) + Math.abs(dy) > 2) { moved = true; autoFit = false; }
+    pixelView.pan(dx, dy);
+    last = { x: e.clientX, y: e.clientY };
+    redraw();
+    return;
+  }
+  const rect = canvas.getBoundingClientRect();
+  const cell = pixelView.screenToCell(e.clientX - rect.left, e.clientY - rect.top);
+  const info = $("cellInfo");
+  if (cell && state.map) {
+    const i = cell.y * state.map.w + cell.x;
+    const id = state.map.layers.overlay[i] || state.map.layers.structure[i] || state.map.layers.ground[i];
+    const name = TILESET.get(id)?.name ?? "?";
+    const poi = state.map.pois.find((p) => Math.abs(p.x - cell.x) <= 1 && Math.abs(p.y - cell.y) <= 1);
+    info.textContent = `(${cell.x},${cell.y}) ${name}${poi ? ` — ${poi.label} ▸` : ""}`;
+    redraw(cell);
+  } else {
+    info.textContent = "";
+  }
+});
+canvas.addEventListener("click", (e) => {
+  if (moved || !state.map) return;
+  const rect = canvas.getBoundingClientRect();
+  const cell = pixelView.screenToCell(e.clientX - rect.left, e.clientY - rect.top);
+  if (!cell) return;
+  const poi = state.map.pois.find((p) => Math.abs(p.x - cell.x) <= 1 && Math.abs(p.y - cell.y) <= 1);
+  if (poi) descendTo(poi.label, poi.kind, poi.childSeed);
+});
+canvas.addEventListener("wheel", (e) => {
+  e.preventDefault();
+  const rect = canvas.getBoundingClientRect();
+  autoFit = false;
+  pixelView.zoomAt(e.clientX - rect.left, e.clientY - rect.top, e.deltaY < 0 ? 1 : -1);
+  redraw();
+}, { passive: false });
+
+// ── Boutons ──────────────────────────────────────────────────────────
+
+$("btnGenerate").addEventListener("click", generateFromControls);
+$("btnAtlasGen").addEventListener("click", generateFromAtlas);
+$("btnUp").addEventListener("click", goUp);
+$("btnFit").addEventListener("click", () => { pixelView.fit(); redraw(); });
+
+$("btnRandomSeed").addEventListener("click", () => {
+  // Seule source d'aléa non-seedée : le bouton dé, hors de src/core.
+  const words = ["helion", "sigma", "vespera", "axion", "lumina", "umbra", "recta", "nona"];
+  const w = words[Math.floor(Math.random() * words.length)];
+  $<HTMLInputElement>("seed").value = `${w}-${Math.floor(Math.random() * 999)}`;
+  generateFromControls();
+});
+
+$("btnView").addEventListener("click", () => {
+  state.view = state.view === "pixel" ? "ascii" : "pixel";
+  $("btnView").textContent = state.view === "pixel" ? "VUE : PIXEL" : "VUE : ASCII";
+  redraw();
+});
+
+$("btnCrt").addEventListener("click", () => {
+  const vp = $("viewport");
+  vp.classList.toggle("crt");
+  $("btnCrt").textContent = vp.classList.contains("crt") ? "CRT : ON" : "CRT : OFF";
+});
+
+$<HTMLSelectElement>("palette").addEventListener("change", (e) => {
+  state.palette = (e.target as HTMLSelectElement).value as PaletteName;
+  applyPaletteToUi();
+  if (state.map) {
+    pixelView.setMap(state.map, state.palette);
+    asciiView.setMap(state.map, state.palette);
+    redraw();
+  }
+});
+
+for (const id of ["cgu", "ruin"]) {
+  $(id).addEventListener("input", syncSliderLabels);
+}
+
+$("btnAudio").addEventListener("click", () => {
+  if (chiptune.playing) {
+    chiptune.stop();
+    $("btnAudio").textContent = "▶ CHIPTUNE";
+  } else if (state.map) {
+    chiptune.start(state.map.seed, state.map.params.ambiance);
+    $("btnAudio").textContent = "■ STOP";
+  }
+});
+
+$("btnPng").addEventListener("click", () => {
+  const url = pixelView.toPngDataUrl();
+  if (url && state.map) void window.terra.export.savePng(`${state.map.seed}-${state.map.scale}.png`, url);
+});
+$("btnTxt").addEventListener("click", () => {
+  if (state.map) void window.terra.export.saveText(`${state.map.seed}-${state.map.scale}.txt`, toAscii(state.map));
+});
+$("btnJson").addEventListener("click", () => {
+  if (state.map) void window.terra.export.saveText(`${state.map.seed}-${state.map.scale}.json`, toJson(state.map));
+});
+$("btnOpen").addEventListener("click", async () => {
+  const json = await window.terra.export.openJson();
+  if (!json) return;
+  try {
+    const map = fromJson(json);
+    $<HTMLInputElement>("seed").value = map.seed;
+    $<HTMLSelectElement>("scale").value = map.scale;
+    writeParams(map.params);
+    state.stack = [];
+    setMap(map, `${map.atlasRef?.label ?? map.seed} [${map.scale}]`, true);
+  } catch (err) {
+    $("cellInfo").textContent = `Fichier illisible : ${(err as Error).message}`;
+  }
+});
+
+window.addEventListener("keydown", (e) => {
+  if (e.target instanceof HTMLInputElement || e.target instanceof HTMLSelectElement) return;
+  if (e.key === "r" || e.key === "R") generateFromControls();
+  if (e.key === "v" || e.key === "V") $("btnView").click();
+  if (e.key === "f" || e.key === "F") { pixelView.fit(); redraw(); }
+  if (e.key === "Backspace") goUp();
+});
+
+// ── Démarrage ────────────────────────────────────────────────────────
+
+window.addEventListener("resize", resizeCanvas);
+applyPaletteToUi();
+resizeCanvas();
+syncSliderLabels();
+generateFromControls();
+void loadAtlas();

@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Terra-Incognita — ROBOTARIIS</title>
+<style>
+  :root {
+    --c0: #0a120a;
+    --c1: #1d3a22;
+    --c2: #4e7d43;
+    --c3: #a8d977;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    background: var(--c0);
+    color: var(--c3);
+    font-family: "DejaVu Sans Mono", "Consolas", monospace;
+    font-size: 13px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    user-select: none;
+  }
+  header {
+    padding: 6px 12px;
+    border-bottom: 1px solid var(--c2);
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    letter-spacing: 2px;
+  }
+  header .title { font-weight: bold; }
+  header .title span { color: var(--c2); }
+  #atlasStatus { font-size: 11px; color: var(--c2); }
+  #atlasStatus.online { color: var(--c3); }
+  main { flex: 1; display: flex; min-height: 0; }
+  #sidebar {
+    width: 250px;
+    border-right: 1px solid var(--c2);
+    padding: 10px;
+    overflow-y: auto;
+    flex-shrink: 0;
+  }
+  fieldset {
+    border: 1px solid var(--c1);
+    padding: 8px;
+    margin-bottom: 10px;
+  }
+  legend { padding: 0 6px; color: var(--c2); font-size: 11px; letter-spacing: 1px; }
+  label { display: block; margin: 6px 0 2px; font-size: 11px; color: var(--c2); }
+  input, select, button {
+    width: 100%;
+    background: var(--c0);
+    color: var(--c3);
+    border: 1px solid var(--c2);
+    font-family: inherit;
+    font-size: 12px;
+    padding: 4px 6px;
+  }
+  input[type="range"] { padding: 0; accent-color: var(--c2); }
+  button { cursor: pointer; margin-top: 4px; }
+  button:hover { background: var(--c1); }
+  button.primary { background: var(--c1); font-weight: bold; letter-spacing: 1px; }
+  button.primary:hover { background: var(--c2); color: var(--c0); }
+  .row { display: flex; gap: 4px; }
+  .row > * { flex: 1; }
+  #viewport { flex: 1; position: relative; min-width: 0; }
+  #viewport canvas {
+    position: absolute;
+    inset: 0;
+    image-rendering: pixelated;
+  }
+  #viewport.crt::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: repeating-linear-gradient(0deg, rgba(0,0,0,0.22) 0 1px, transparent 1px 3px);
+  }
+  footer {
+    border-top: 1px solid var(--c2);
+    padding: 4px 12px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--c2);
+    gap: 12px;
+  }
+  #breadcrumb b { color: var(--c3); }
+  #cellInfo { white-space: nowrap; }
+</style>
+</head>
+<body>
+  <header>
+    <div class="title">TERRA-INCOGNITA <span>// C.G.U. — DIRECTION CARTOGRAPHIQUE</span></div>
+    <div id="atlasStatus">ATLAS : sondage…</div>
+  </header>
+  <main>
+    <div id="sidebar">
+      <fieldset>
+        <legend>GÉNÉRATION</legend>
+        <label for="seed">Seed</label>
+        <div class="row">
+          <input id="seed" value="sigma-7" spellcheck="false">
+          <button id="btnRandomSeed" title="Seed aléatoire" style="flex:0 0 34px">⚄</button>
+        </div>
+        <label for="scale">Échelle</label>
+        <select id="scale">
+          <option value="region">Région / monde</option>
+          <option value="city" selected>Ville / quartier</option>
+          <option value="interior">Intérieur / tactique</option>
+        </select>
+        <button id="btnGenerate" class="primary">GÉNÉRER</button>
+      </fieldset>
+      <fieldset>
+        <legend>ATLAS</legend>
+        <label for="atlasNode">Lieu canonique</label>
+        <select id="atlasNode">
+          <option value="">— mode libre —</option>
+        </select>
+        <button id="btnAtlasGen">GÉNÉRER DEPUIS L'ATLAS</button>
+      </fieldset>
+      <fieldset>
+        <legend>PARAMÈTRES</legend>
+        <label>Présence C.G.U. <span id="cguVal">0.50</span></label>
+        <input id="cgu" type="range" min="0" max="1" step="0.05" value="0.5">
+        <label>Délabrement <span id="ruinVal">0.20</span></label>
+        <input id="ruin" type="range" min="0" max="1" step="0.05" value="0.2">
+        <label for="ambiance">Ambiance</label>
+        <select id="ambiance">
+          <option value="neutre" selected>Neutre</option>
+          <option value="militaire">Militaire</option>
+          <option value="industriel">Industriel</option>
+          <option value="clandestin">Clandestin</option>
+          <option value="ruine">Ruine</option>
+        </select>
+      </fieldset>
+      <fieldset>
+        <legend>AFFICHAGE</legend>
+        <label for="palette">Palette</label>
+        <select id="palette">
+          <option value="phosphore" selected>Phosphore</option>
+          <option value="sepia">Sépia</option>
+          <option value="blueprint">Blueprint</option>
+        </select>
+        <div class="row">
+          <button id="btnView">VUE : PIXEL</button>
+          <button id="btnCrt">CRT : ON</button>
+        </div>
+        <button id="btnFit">CADRER LA CARTE</button>
+      </fieldset>
+      <fieldset>
+        <legend>AUDIO</legend>
+        <button id="btnAudio">▶ CHIPTUNE</button>
+      </fieldset>
+      <fieldset>
+        <legend>EXPORT</legend>
+        <div class="row">
+          <button id="btnPng">PNG</button>
+          <button id="btnTxt">TXT</button>
+          <button id="btnJson">JSON</button>
+        </div>
+        <button id="btnOpen">OUVRIR UNE CARTE…</button>
+      </fieldset>
+      <fieldset>
+        <legend>NAVIGATION</legend>
+        <button id="btnUp" disabled>◀ REMONTER</button>
+        <div style="margin-top:6px;font-size:10px;color:var(--c1)">
+          Clic sur un POI encadré : descendre d'échelle.<br>
+          Molette : zoom · glisser : déplacer · R : régénérer.
+        </div>
+      </fieldset>
+    </div>
+    <div id="viewport" class="crt">
+      <canvas id="view"></canvas>
+    </div>
+  </main>
+  <footer>
+    <div id="breadcrumb">—</div>
+    <div id="cellInfo"></div>
+  </footer>
+  <script src="renderer.js"></script>
+</body>
+</html>
