@@ -10,7 +10,28 @@
 Terra-Incognita génère des cartes **entièrement procédurales** à trois échelles, dans une esthétique
 Game Boy / écran radar : tiles pixel art 16×16 **dessinés par le code** (zéro asset externe),
 macros « Lego » (caserne C.G.U., checkpoint, marché noir…), vue ASCII/TUI, chiptune génératif,
-et ancrage sur l'**Atlas** (robotariis-graph) pour que le canon du lore pilote la génération.
+et ancrage sur l'**Atlas** ([robotariis-graph](https://github.com/obareau/robotariis-graph)) pour
+que le canon du lore pilote la génération.
+
+![Terra-Incognita — ville sous contrôle C.G.U., palette phosphore](assets/screenshots/hero-city.png)
+
+| Vue ASCII/TUI (même carte) | Région, palette blueprint |
+|---|---|
+| ![Vue ASCII](assets/screenshots/ascii-view.png) | ![Région blueprint](assets/screenshots/region-blueprint.png) |
+
+La même carte s'exporte en pixel art PNG, en JSON rechargeable, ou en ASCII brut :
+
+```
+█,,,,,,,,,,,,,,,░░,,M▓▓▓▓▓▓▓▓▓M,░░,,,,,,¶,,,,,,,,,,,░░,,%%;;;,,█
+█⌂⌂⌂⌂⌂⌂⌂,,,,,,,,░░,,▓b.b.b.b.b▓,░░,,,,,,,⌂⌂⌂⌂⌂⌂,,,,,░░,;,,,,,;,█
+█,⌂⌂⌂⌂⌂⌂⌂,,,,,,,░░,,▓....n....▓,░░,,⌂⌂⌂⌂⌂⌂⌂⌂,,,,,,,,░░,,;;,,,,,█
+█,⌂⌂⌂⌂⌂⌂⌂,,,,,,!░░,,▓▪......G.▓!░░,,⌂⌂⌂⌂⌂⌂⌂⌂,,,,,,,!░░,,;;;,;,;█
+█,⌂⌂⌂⌂⌂⌂⌂,,,,,,,░░,,M▓▓▓==▓▓▓▓M,░░,,,,,,,,,,,,,,,,,,░░,;;;,,,,;█
+█,⌂⌂⌂⌂⌂⌂⌂,,,,,,,░░,,†...▒▒...¶,,░░,,,,⌂⌂⌂⌂,,,,,,,,,,░░,,;,;%,,;█
+=░░░░░░░░░░░░░▓▓░//░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░=
+```
+*(caserne C.G.U. avec miradors `M`, couchettes `b` et portail `==` ; immeubles `⌂` ;
+checkpoint `//` sur l'avenue ; bannières `†` et propagande `¶` ; ruines `;%`)*
 
 ---
 

@@ -23,11 +23,29 @@ function createWindow(): void {
   win.setMenuBarVisibility(false);
   void win.loadFile(path.join(__dirname, "index.html"));
   if (screenshotPath) {
+    // Options du mode capture : --view=ascii, --palette=sepia|blueprint, --scale=region|interior
+    const opt = (name: string): string | undefined =>
+      process.argv.find((a) => a.startsWith(`--${name}=`))?.slice(name.length + 3);
     win.webContents.once("did-finish-load", () => {
       setTimeout(async () => {
-        const img = await win.webContents.capturePage();
-        fs.writeFileSync(screenshotPath, img.toPNG());
-        app.quit();
+        const palette = opt("palette");
+        const scale = opt("scale");
+        if (palette) {
+          await win.webContents.executeJavaScript(
+            `(() => { const s = document.getElementById("palette"); s.value = ${JSON.stringify(palette)}; s.dispatchEvent(new Event("change")); })()`);
+        }
+        if (scale) {
+          await win.webContents.executeJavaScript(
+            `(() => { document.getElementById("scale").value = ${JSON.stringify(scale)}; document.getElementById("btnGenerate").click(); })()`);
+        }
+        if (opt("view") === "ascii") {
+          await win.webContents.executeJavaScript(`document.getElementById("btnView").click()`);
+        }
+        setTimeout(async () => {
+          const img = await win.webContents.capturePage();
+          fs.writeFileSync(screenshotPath, img.toPNG());
+          app.quit();
+        }, 1200);
       }, 2500);
     });
   }
