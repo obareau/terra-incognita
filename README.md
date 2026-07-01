@@ -44,12 +44,12 @@ npm test           # invariants : déterminisme, connexité BSP, mapping Atlas�
 npm run package    # binaire portable (electron-builder)
 ```
 
-L'intégration Atlas est optionnelle : si `robotariis-graph` tourne (port 5557), le sélecteur
+L'intégration Atlas est optionnelle : si l'`Atlas` tourne (port 5557), le sélecteur
 « Lieu canonique » se remplit ; sinon l'app retombe sur son cache disque, puis sur le mode libre.
 
 ```bash
 # Pour l'Atlas :
-cd ../robotariis-graph && uv run app.py    # http://localhost:5557
+cd ../Atlas && uv run --with flask python app.py    # http://localhost:5557
 ```
 
 ## Utilisation
@@ -106,4 +106,4 @@ exactement la même carte, même si le mapping heuristique évolue. La publicati
 - [ROADMAP.md](ROADMAP.md) — phases, jalons, idées post-v1
 - [DECISIONS.md](DECISIONS.md) — choix retenus, **options écartées et pièges rencontrés**
 
-Fait partie de l'écosystème **ROBOTARIIS** (Atlas robotariis-graph, timeline, radio…).
+Fait partie de l'écosystème **ROBOTARIIS** ([Atlas](https://github.com/obareau/Atlas), timeline, radio…).
