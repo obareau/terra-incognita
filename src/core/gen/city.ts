@@ -4,11 +4,12 @@
 
 import type { GenParams, MapData } from "../../shared/types";
 import { chance, deriveSeed, int, rngFor, weighted, type Rng } from "../rng";
-import { createMap, fillGround, paintGround, paintStructure, setGround, setOverlay, setStructure, structureAt } from "../mapdata";
+import { createMap, fillGround, groundAt, paintGround, paintStructure, setGround, setOverlay, setStructure, structureAt } from "../mapdata";
 import { T } from "../tiles/tileset";
 import { areaIsFree, macroSize, stampMacro, type Macro } from "../macros/index";
 import { caserne, checkpoint, depot, qgCgu } from "../macros/cgu";
 import { courUsine, marche, marcheNoir, parc } from "../macros/civil";
+import { resolveStyle, type ArchStyle } from "../factions/styles";
 
 export const CITY_W = 96;
 export const CITY_H = 96;
@@ -36,8 +37,8 @@ function avenuePositions(rng: Rng, size: number): number[] {
   return out;
 }
 
-function zoneWeights(params: GenParams): Record<Zone, number> {
-  return {
+function zoneWeights(params: GenParams, style: ArchStyle): Record<Zone, number> {
+  const base: Record<Zone, number> = {
     militaire: 0.5 + params.cguDensity * 4,
     habitat: 3,
     industrie: params.ambiance === "industriel" ? 4 : 1.5,
@@ -45,9 +46,13 @@ function zoneWeights(params: GenParams): Record<Zone, number> {
     parc: params.ambiance === "ruine" ? 0.2 : 0.8,
     ruine: 0.2 + params.ruin * 4,
   };
+  for (const z of Object.keys(base) as Zone[]) {
+    base[z] *= style.zoneBias[z] ?? 1;
+  }
+  return base;
 }
 
-function fillHabitat(map: MapData, rng: Rng, b: Block, params: GenParams): void {
+function fillHabitat(map: MapData, rng: Rng, b: Block, params: GenParams, style: ArchStyle): void {
   const n = int(rng, 2, 4);
   for (let i = 0; i < n; i++) {
     const bw = int(rng, 4, Math.min(8, b.w - 2));
@@ -55,12 +60,12 @@ function fillHabitat(map: MapData, rng: Rng, b: Block, params: GenParams): void 
     const x = b.x + int(rng, 0, Math.max(0, b.w - bw - 1));
     const y = b.y + int(rng, 0, Math.max(0, b.h - bh - 1));
     if (!areaIsFree(map, x, y, bw, bh)) continue;
-    paintStructure(map, x, y, bw, bh, T.ROOF_HAB);
+    paintStructure(map, x, y, bw, bh, chance(rng, 0.72) ? style.roofPrimary : style.roofSecondary);
     // Affiche de propagande au pied de l'immeuble, côté rue.
-    if (chance(rng, params.cguDensity * 0.7)) {
+    if (chance(rng, style.decor.propaganda * Math.max(0.3, params.cguDensity))) {
       setOverlay(map, x + int(rng, 0, bw - 1), y + bh, T.PROPAGANDA);
     }
-    if (params.ambiance === "clandestin" && chance(rng, 0.5)) {
+    if (chance(rng, style.decor.graffiti * 0.6)) {
       setOverlay(map, x - 1, y + int(rng, 0, bh - 1), T.GRAFFITI);
     }
   }
@@ -108,6 +113,7 @@ function stampIfFits(map: MapData, rng: Rng, m: Macro, b: Block): boolean {
 export function generateCity(seed: string, params: GenParams, w = CITY_W, h = CITY_H): MapData {
   const rng = rngFor(seed, "city");
   const map = createMap("city", seed, params, w, h);
+  const style = resolveStyle(params);
 
   // Sol de base selon l'ambiance.
   fillGround(map, params.ambiance === "ruine" ? T.WASTE : T.DIRT);
@@ -126,7 +132,7 @@ export function generateCity(seed: string, params: GenParams, w = CITY_W, h = CI
   // ── Passe 2 : zonage des blocs ─────────────────────────────────────
   const xBounds = [0, ...vx.map((x) => x + ROAD_W), w];
   const yBounds = [0, ...hy.map((y) => y + ROAD_W), h];
-  const weights = zoneWeights(params);
+  const weights = zoneWeights(params, style);
   const zoneNames = Object.keys(weights) as Zone[];
   const blocks: Block[] = [];
   for (let yi = 0; yi + 1 < yBounds.length; yi++) {
@@ -161,7 +167,7 @@ export function generateCity(seed: string, params: GenParams, w = CITY_W, h = CI
         }
         break;
       }
-      case "habitat": fillHabitat(map, rng, b, params); break;
+      case "habitat": fillHabitat(map, rng, b, params, style); break;
       case "industrie": {
         fillIndustrie(map, rng, b);
         map.pois.push({
@@ -195,10 +201,11 @@ export function generateCity(seed: string, params: GenParams, w = CITY_W, h = CI
     }
   }
 
-  // ── Passe 4 : enceinte + décor ─────────────────────────────────────
+  // ── Passe 4 : enceinte + décor (le style de la faction dominante) ──
   if (params.cguDensity > 0.6) {
-    for (let x = 0; x < w; x++) { setStructure(map, x, 0, T.WALL); setStructure(map, x, h - 1, T.WALL); }
-    for (let y = 0; y < h; y++) { setStructure(map, 0, y, T.WALL); setStructure(map, w - 1, y, T.WALL); }
+    const wallT = style.wall;
+    for (let x = 0; x < w; x++) { setStructure(map, x, 0, wallT); setStructure(map, x, h - 1, wallT); }
+    for (let y = 0; y < h; y++) { setStructure(map, 0, y, wallT); setStructure(map, w - 1, y, wallT); }
     // Portes blindées là où les avenues percent l'enceinte.
     for (const x of vx) for (const dy of [0, h - 1]) { setStructure(map, x, dy, T.GATE); setStructure(map, x + 1, dy, T.GATE); }
     for (const y of hy) for (const dx of [0, w - 1]) { setStructure(map, dx, y, T.GATE); setStructure(map, dx, y + 1, T.GATE); }
@@ -206,14 +213,16 @@ export function generateCity(seed: string, params: GenParams, w = CITY_W, h = CI
     for (const [x, y] of [[1, 1], [w - 2, 1], [1, h - 2], [w - 2, h - 2]] as const) setStructure(map, x, y, T.MIRADOR);
   }
 
-  // Lampadaires le long des avenues.
+  // Lampadaires le long des avenues (les styles clandestins restent sombres).
   for (const x of vx) {
     for (let y = 4; y < h - 4; y += 8) {
-      if (structureAt(map, x - 1, y) === 0) setStructure(map, x - 1, y, T.LAMP);
+      if (structureAt(map, x - 1, y) === 0 && chance(rng, style.decor.lamp)) {
+        setStructure(map, x - 1, y, T.LAMP);
+      }
     }
   }
-  // Bannières C.G.U. dispersées selon la densité.
-  const banners = Math.floor(params.cguDensity * 12);
+  // Bannières de faction, à la mesure du style et de la pression C.G.U.
+  const banners = Math.round(14 * style.decor.banner * (0.4 + 0.6 * params.cguDensity));
   for (let i = 0; i < banners; i++) {
     const x = int(rng, 2, w - 3);
     const y = int(rng, 2, h - 3);
@@ -225,12 +234,22 @@ export function generateCity(seed: string, params: GenParams, w = CITY_W, h = CI
       setOverlay(map, int(rng, 2, w - 3), int(rng, 2, h - 3), T.CONTESTED);
     }
   }
-  // Graffitis d'ambiance clandestine.
-  if (params.ambiance === "clandestin") {
-    for (let i = 0; i < 14; i++) {
-      const x = int(rng, 1, w - 2);
-      const y = int(rng, 1, h - 2);
-      if (structureAt(map, x, y) === 0) setOverlay(map, x, y, T.GRAFFITI);
+  // Graffitis dissidents.
+  const graffiti = Math.round(16 * style.decor.graffiti);
+  for (let i = 0; i < graffiti; i++) {
+    const x = int(rng, 1, w - 2);
+    const y = int(rng, 1, h - 2);
+    if (structureAt(map, x, y) === 0) setOverlay(map, x, y, T.GRAFFITI);
+  }
+  // Végétation urbaine (les Jardins verdissent tout).
+  const trees = Math.round(50 * style.decor.tree);
+  for (let i = 0; i < trees; i++) {
+    const x = int(rng, 1, w - 2);
+    const y = int(rng, 1, h - 2);
+    const g = groundAt(map, x, y);
+    if (structureAt(map, x, y) === 0 && (g === T.DIRT || g === T.GRASS)) {
+      setGround(map, x, y, T.GRASS);
+      setStructure(map, x, y, T.TREE);
     }
   }
 

@@ -62,11 +62,16 @@ export function mapNodeToParams(node: AtlasNode, graph: AtlasGraph): MappedNode 
   if (has("guerre")) ruin += 0.25;
   ruin = Math.max(0, Math.min(1, ruin));
 
-  // ── Factions présentes (alliés + ennemis = présence sur zone) ─────
-  const present = rels
-    .filter((r) => ["membre", "allie", "ennemi", "connecte", "parent"].includes(r.rel))
-    .map((r) => r.otherId);
-  const factions = [...new Set(factionIds(graph, present))];
+  // ── Factions présentes, triées par dominance (membre > allié > lien) ──
+  const relWeight: Record<string, number> = { membre: 3, parent: 3, allie: 2, connecte: 1, ennemi: 0.5 };
+  const presence = new Map<string, number>();
+  for (const r of rels) {
+    const w = relWeight[r.rel];
+    if (!w) continue;
+    presence.set(r.otherId, (presence.get(r.otherId) ?? 0) + w);
+  }
+  const factions = factionIds(graph, [...presence.keys()])
+    .sort((a, b) => (presence.get(b) ?? 0) - (presence.get(a) ?? 0));
 
   // ── Échelle suggérée ───────────────────────────────────────────────
   let scale: Scale = "city";

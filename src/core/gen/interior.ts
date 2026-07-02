@@ -7,6 +7,7 @@ import { createMap, paintStructure, setStructure, structureAt } from "../mapdata
 import { T } from "../tiles/tileset";
 import { stampMacro } from "../macros/index";
 import { blocCellules, posteGarde } from "../macros/cgu";
+import { resolveStyle } from "../factions/styles";
 
 export const INTERIOR_W = 48;
 export const INTERIOR_H = 36;
@@ -146,8 +147,10 @@ export function generateInterior(seed: string, params: GenParams, w = INTERIOR_W
   const map = createMap("interior", seed, params, w, h);
 
   const militaire = params.ambiance === "militaire" || params.cguDensity > 0.6;
-  const wallTile = militaire ? T.WALL_METAL : T.WALL;
-  map.layers.ground.fill(militaire ? T.FLOOR_METAL : T.FLOOR_CONC);
+  const style = resolveStyle(params);
+  // Le grillage n'a pas de sens en intérieur : les styles organiques bâtissent en dur.
+  const wallTile = militaire ? T.WALL_METAL : style.wall === T.FENCE ? T.WALL : style.wall;
+  map.layers.ground.fill(wallTile === T.WALL_METAL ? T.FLOOR_METAL : T.FLOOR_CONC);
   map.layers.structure.fill(wallTile);
 
   const root: BspNode = { x: 0, y: 0, w, h };

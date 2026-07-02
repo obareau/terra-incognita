@@ -20,6 +20,8 @@ export interface GenParams {
   ambiance: Ambiance;
   /** Délabrement 0..1 (guerre, abandon). */
   ruin: number;
+  /** Override manuel du style d'architecture (sinon : faction dominante). */
+  archStyle?: string;
   biome?: string;
   population?: number;
 }

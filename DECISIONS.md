@@ -39,6 +39,10 @@
 | Publication automatique à chaque génération | Pollution du canon garantie (chaque seed testée créerait des nœuds). |
 | Renommer les nœuds existants lors d'une re-publication | Risque d'écraser des éditions manuelles d'Olivier ; on skippe les ids existants. |
 
+### Retenu (styles d'architecture, 2026-07-02)
+- **6 archétypes** plutôt que 38 styles individuels : martial, liturgique, clandestin, organique, industriel, civique — chaque faction canon est assignée à un archétype d'après sa fiche `02-FACTIONS/*.md` (ex. Pasteurs = « architecture sacrée-technologique » → liturgique). Un style par faction aurait été ingérable et visuellement illisible.
+- La **faction dominante** (tri par poids de relation : membre/parent > allié > connecté > ennemi) impose le style ; override manuel possible dans l'UI (`GenParams.archStyle`).
+
 ### Échecs / pièges rencontrés
 - **Plafond MAX_POIS sur les nœuds créés** (2026-07-02) : comptait les créations au lieu des POI traités → une re-publication créait un 13ᵉ nœud. Corrigé : le plafond porte sur les POI traités, sélection stable.
 - **`uv run python -c` sans deps** : robotariis-graph n'a pas de pyproject → `--with flask` obligatoire pour lancer l'instance sandbox.

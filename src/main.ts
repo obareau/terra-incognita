@@ -35,9 +35,14 @@ function createWindow(): void {
           await win.webContents.executeJavaScript(
             `(() => { const s = document.getElementById("palette"); s.value = ${JSON.stringify(palette)}; s.dispatchEvent(new Event("change")); })()`);
         }
-        if (scale) {
+        const arch = opt("arch");
+        if (scale || arch) {
           await win.webContents.executeJavaScript(
-            `(() => { document.getElementById("scale").value = ${JSON.stringify(scale)}; document.getElementById("btnGenerate").click(); })()`);
+            `(() => {
+              if (${JSON.stringify(scale ?? "")}) document.getElementById("scale").value = ${JSON.stringify(scale ?? "")};
+              document.getElementById("archStyle").value = ${JSON.stringify(arch ?? "")};
+              document.getElementById("btnGenerate").click();
+            })()`);
         }
         if (opt("view") === "ascii") {
           await win.webContents.executeJavaScript(`document.getElementById("btnView").click()`);

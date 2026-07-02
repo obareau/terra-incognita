@@ -64,6 +64,21 @@ Paramètres de génération : **Présence C.G.U.** (0 = absent, 1 = état de si�
 checkpoints, miradors, propagande), **Délabrement** (friches, ruines, cendres), **Ambiance**
 (neutre, militaire, industriel, clandestin, ruine), **Palette** (phosphore, sépia, blueprint).
 
+## Styles d'architecture par faction
+
+Chaque faction connue impose un archétype architectural dérivé de son caractère canon
+(`core/factions/styles.ts`). En mode Atlas, la **faction dominante** du lieu (relations
+`membre` > `allie` > `connecte`) choisit le style ; un sélecteur permet de forcer.
+
+| Archétype | Factions types | Signature |
+|---|---|---|
+| **Martial** | C.G.U., Clīpeātī Unītās, Dark Umbrae | murs métal, miradors, propagande, peu d'arbres |
+| **Liturgique** | Pasteurs de la Rectitude, Illuminés | esplanades de cérémonie, bannières, avenues éclairées |
+| **Clandestin** | Voile d'Ombre, Renégats, Union Clandestine | marchés denses, graffitis, rues sombres |
+| **Organique** | Gardiens des Jardins, Protecteurs Verts | grillages plutôt que murs, parcs, ville plantée |
+| **Industriel** | Magnats, Barons Technologiques, Mécanistes | usines, machines, rues éclairées (la stabilité paie) |
+| **Civique** | Archivistes Libres, Continui Numeri | blocs réguliers, propreté, ni graffiti ni propagande |
+
 ## Architecture
 
 ```

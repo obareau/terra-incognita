@@ -44,11 +44,13 @@ const chiptune = new Chiptune();
 // ── Lecture des contrôles ────────────────────────────────────────────
 
 function readParams(): GenParams {
+  const arch = $<HTMLSelectElement>("archStyle").value;
   return {
     ...DEFAULT_PARAMS,
     cguDensity: parseFloat($<HTMLInputElement>("cgu").value),
     ruin: parseFloat($<HTMLInputElement>("ruin").value),
     ambiance: $<HTMLSelectElement>("ambiance").value as Ambiance,
+    ...(arch ? { archStyle: arch } : {}),
   };
 }
 
@@ -56,6 +58,7 @@ function writeParams(p: GenParams): void {
   $<HTMLInputElement>("cgu").value = String(p.cguDensity);
   $<HTMLInputElement>("ruin").value = String(p.ruin);
   $<HTMLSelectElement>("ambiance").value = p.ambiance;
+  $<HTMLSelectElement>("archStyle").value = p.archStyle ?? "";
   syncSliderLabels();
 }
 
