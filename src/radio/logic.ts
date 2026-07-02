@@ -28,13 +28,17 @@ export function stationSeed(birthday: string, d: Date): string {
   return `radio:${birthday}:${hourKey(d)}:${p(d.getMinutes())}${p(d.getSeconds())}`;
 }
 
-/** Fréquence FM personnelle, dérivée de la date de naissance. */
+/**
+ * Fréquence personnelle dans la **bande Ω** — les « fréquences mortes » :
+ * l'ancienne bande télévisuelle analogique (600–799.9 MHz), abandonnée
+ * depuis la Fragmentation. Hors FM : personne d'officiel n'écoute là.
+ */
 export function frequencyFor(birthday: string): string {
   let h = 2166136261;
   for (let i = 0; i < birthday.length; i++) {
     h = Math.imul(h ^ birthday.charCodeAt(i), 16777619);
   }
-  const mhz = 87.5 + ((h >>> 0) % 205) / 10; // 87.5 → 107.9
+  const mhz = 600 + ((h >>> 0) % 2000) / 10; // 600.0 → 799.9
   return mhz.toFixed(1);
 }
 
@@ -127,7 +131,7 @@ export function announcementFor(seed: string, track: number, genre: string, hour
   const parts: string[] = [];
   if (track === 0) {
     parts.push(expand(pick(rng, STATION_TPL), rng));
-    parts.push(`${freq.replace(".", " point ")} mégahertz. Il est ${hour} heures.`);
+    parts.push(`Bande oméga, ${freq.replace(".", " point ")} mégahertz — les fréquences mortes. Il est ${hour} heures.`);
   }
   parts.push(expand(pick(rng, GENRE_TPL[genre] ?? [`${genre}.`]), rng));
   if (track !== 0 && rng() < 0.6) parts.push(expand(pick(rng, FILLER_TPL), rng));

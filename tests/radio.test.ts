@@ -17,14 +17,20 @@ describe("Radio Robotariis — logique de station", () => {
     expect(stationSeed("1980-03-14", d)).not.toBe(stationSeed("1993-11-02", d));
   });
 
-  test("deux anniversaires → deux fréquences (et dans la bande FM)", () => {
+  test("deux anniversaires → deux fréquences, dans la bande Ω (hors FM)", () => {
     const a = parseFloat(frequencyFor("1980-03-14"));
     const b = parseFloat(frequencyFor("1993-11-02"));
     expect(a).not.toBe(b);
     for (const f of [a, b]) {
-      expect(f).toBeGreaterThanOrEqual(87.5);
-      expect(f).toBeLessThanOrEqual(107.9);
+      expect(f).toBeGreaterThanOrEqual(600);
+      expect(f).toBeLessThanOrEqual(799.9);
     }
+  });
+
+  test("l'ouverture d'antenne situe la bande oméga", () => {
+    const a = announcementFor("radio:x:2026-07-02T21", 0, "marche", 21, frequencyFor("1980-03-14"));
+    expect(a).toContain("Bande oméga");
+    expect(a).toContain("fréquences mortes");
   });
 
   test("grille des programmes : nuit = requiem/drone, matinée = marches", () => {

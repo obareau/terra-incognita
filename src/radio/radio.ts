@@ -86,7 +86,7 @@ function tuneIn(): void {
   state.birthday = input.value;
   state.tunedAt = new Date();
   localStorage.setItem("radio-birthday", state.birthday);
-  $("freq").innerHTML = `${frequencyFor(state.birthday)} <small>MHz</small>`;
+  $("freq").innerHTML = `Ω ${frequencyFor(state.birthday)} <small>MHz — fréquences mortes</small>`;
   state.playing = true;
   $("btnTune").textContent = "⏻ COUPER";
   playTrack(0);
@@ -147,7 +147,7 @@ function drawScope(): void {
 const saved = localStorage.getItem("radio-birthday");
 if (saved) {
   $<HTMLInputElement>("birthday").value = saved;
-  $("freq").innerHTML = `${frequencyFor(saved)} <small>MHz</small>`;
+  $("freq").innerHTML = `Ω ${frequencyFor(saved)} <small>MHz — fréquences mortes</small>`;
 }
 initVoice();
 $("btnVoice").textContent = state.voice ? "🎙 ON" : "🎙 OFF";
