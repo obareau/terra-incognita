@@ -64,9 +64,11 @@ export function generateRegion(seed: string, params: GenParams, w = REGION_W, h 
   const decay = makeValueNoise(rng, 16);
 
   const fE = 6 / Math.max(w, h);
+  const elev = new Float32Array(w * h);
   for (let y = 0; y < h; y++) {
     for (let x = 0; x < w; x++) {
       const e = fbm(elevation, x * fE, y * fE, 3);
+      elev[y * w + x] = e;
       const hu = fbm(humidity, x * fE * 1.7 + 40, y * fE * 1.7 + 40, 2);
       const d = fbm(decay, x * fE * 2.3 + 80, y * fE * 2.3 + 80, 2);
       let tile: number;
@@ -79,6 +81,20 @@ export function generateRegion(seed: string, params: GenParams, w = REGION_W, h 
       setGround(map, x, y, tile);
       // Forêts sur les herbages humides.
       if (tile === T.GRASS && hu > 0.62 && chance(rng, 0.35)) setStructure(map, x, y, T.TREE);
+    }
+  }
+
+  // ── Courbes de niveau topographiques (relief lisible, look état-major) ──
+  const CONTOUR_STEP = 0.08; // ~5 niveaux sur les terres émergées
+  const level = (i: number): number => Math.floor(elev[i] / CONTOUR_STEP);
+  for (let y = 0; y < h - 1; y++) {
+    for (let x = 0; x < w - 1; x++) {
+      const i = y * w + x;
+      const g = map.layers.ground[i];
+      if (g === T.WATER || g === T.SAND) continue; // pas d'isohypses en mer ni sur l'estran
+      if (level(i) !== level(i + 1) || level(i) !== level(i + w)) {
+        map.layers.overlay[i] = T.CONTOUR;
+      }
     }
   }
 

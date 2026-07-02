@@ -36,7 +36,7 @@ export const T = {
   BUNK: 34, TABLE: 35, CELL_BARS: 36, STALL: 37, TURRET: 38, RUIN_WALL: 39,
   // Overlay
   PROPAGANDA: 50, GRAFFITI: 51, BANNER_CGU: 52,
-  POI_CITY: 53, POI_BASE: 54, POI_RUIN: 55, CONTESTED: 56,
+  POI_CITY: 53, POI_BASE: 54, POI_RUIN: 55, CONTESTED: 56, CONTOUR: 57,
 } as const;
 
 const defs: TileDef[] = [
@@ -83,6 +83,7 @@ const defs: TileDef[] = [
   { id: T.POI_BASE, name: "base C.G.U.", layer: "overlay", walkable: true, glyph: "*", colorRole: 3, art: art.artPoiBase },
   { id: T.POI_RUIN, name: "ruines", layer: "overlay", walkable: true, glyph: "x", colorRole: 2, art: art.artPoiRuin },
   { id: T.CONTESTED, name: "zone contestée", layer: "overlay", walkable: true, glyph: "X", colorRole: 3, art: art.artContested },
+  { id: T.CONTOUR, name: "courbe de niveau", layer: "overlay", walkable: true, glyph: "·", colorRole: 2, autotile: true, connects: "contour", art: art.artContour },
 ];
 
 export const TILESET: ReadonlyMap<number, TileDef> = new Map(defs.map((d) => [d.id, d]));

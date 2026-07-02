@@ -465,6 +465,21 @@ export const artContested: ArtRecipe = () => {
   return b;
 };
 
+/** Courbe de niveau topographique : trait fin pointillé vers les voisins connectés. */
+export const artContour: ArtRecipe = (_rng, variant) => {
+  const b = buf();
+  const c = TILE_PX / 2;
+  const dot = (x: number, y: number, _i: number): void => {
+    set(b, x, y, 2); // trait continu, un ton sous les POI/routes
+  };
+  if (variant & N) for (let y = 0; y <= c; y++) dot(c, y, y);
+  if (variant & S) for (let y = c; y < TILE_PX; y++) dot(c, y, y);
+  if (variant & E) for (let x = c; x < TILE_PX; x++) dot(x, c, x);
+  if (variant & W) for (let x = 0; x <= c; x++) dot(x, c, x);
+  if (variant === 0) { set(b, c, c, 2); set(b, c + 1, c, 2); }
+  return b;
+};
+
 /** Rend le pixel art d'un tile de façon déterministe (id+variante). */
 export function renderTileArt(recipe: ArtRecipe, tileId: number, variant: number): ArtBuf {
   return recipe(rngFor(`tile:${tileId}:v${variant}`, "art"), variant);
