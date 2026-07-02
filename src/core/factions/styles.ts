@@ -30,6 +30,8 @@ export interface ArchStyle {
   };
   /** Multiplicateurs des poids de zonage de la ville. */
   zoneBias: Record<string, number>;
+  /** Probabilité qu'une zone verte devienne un mémorial (spomenik). */
+  monumentChance: number;
 }
 
 export const ARCH_STYLES: Record<ArchStyleId, ArchStyle> = {
@@ -41,6 +43,7 @@ export const ARCH_STYLES: Record<ArchStyleId, ArchStyle> = {
     roofSecondary: T.ROOF_IND,
     decor: { banner: 0.9, propaganda: 0.9, graffiti: 0.05, lamp: 0.8, tree: 0.1 },
     zoneBias: { militaire: 1.6, habitat: 1, industrie: 1, marche: 0.6, parc: 0.3, ruine: 1 },
+    monumentChance: 0.85,
   },
   liturgique: {
     id: "liturgique",
@@ -50,6 +53,7 @@ export const ARCH_STYLES: Record<ArchStyleId, ArchStyle> = {
     roofSecondary: T.ROOF_HAB,
     decor: { banner: 1, propaganda: 0.7, graffiti: 0.02, lamp: 1, tree: 0.3 },
     zoneBias: { militaire: 0.8, habitat: 1.2, industrie: 0.5, marche: 1, parc: 1.2, ruine: 0.6 },
+    monumentChance: 1,
   },
   clandestin: {
     id: "clandestin",
@@ -59,6 +63,7 @@ export const ARCH_STYLES: Record<ArchStyleId, ArchStyle> = {
     roofSecondary: T.ROOF_IND,
     decor: { banner: 0.1, propaganda: 0.1, graffiti: 0.9, lamp: 0.15, tree: 0.15 },
     zoneBias: { militaire: 0.4, habitat: 1.2, industrie: 0.9, marche: 2.2, parc: 0.4, ruine: 1.4 },
+    monumentChance: 0,
   },
   organique: {
     id: "organique",
@@ -68,6 +73,7 @@ export const ARCH_STYLES: Record<ArchStyleId, ArchStyle> = {
     roofSecondary: T.ROOF_HAB,
     decor: { banner: 0.15, propaganda: 0.05, graffiti: 0.15, lamp: 0.35, tree: 1 },
     zoneBias: { militaire: 0.3, habitat: 1, industrie: 0.25, marche: 0.9, parc: 3, ruine: 0.5 },
+    monumentChance: 0,
   },
   industriel: {
     id: "industriel",
@@ -77,6 +83,7 @@ export const ARCH_STYLES: Record<ArchStyleId, ArchStyle> = {
     roofSecondary: T.ROOF_HAB,
     decor: { banner: 0.3, propaganda: 0.3, graffiti: 0.25, lamp: 0.9, tree: 0.05 },
     zoneBias: { militaire: 0.7, habitat: 0.9, industrie: 2.4, marche: 1.1, parc: 0.3, ruine: 0.9 },
+    monumentChance: 0.15,
   },
   civique: {
     id: "civique",
@@ -86,6 +93,7 @@ export const ARCH_STYLES: Record<ArchStyleId, ArchStyle> = {
     roofSecondary: T.ROOF_HAB,
     decor: { banner: 0.25, propaganda: 0.15, graffiti: 0.05, lamp: 0.9, tree: 0.5 },
     zoneBias: { militaire: 0.5, habitat: 1.4, industrie: 0.7, marche: 1.1, parc: 1.3, ruine: 0.5 },
+    monumentChance: 0.25,
   },
 };
 

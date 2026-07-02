@@ -465,6 +465,121 @@ export const artContested: ArtRecipe = () => {
   return b;
 };
 
+/**
+ * Spomenik — mémorial brutaliste du C.G.U. (béton monumental, formes
+ * abstraites à la yougoslave). 4 silhouettes selon la variante.
+ */
+export const artSpomenik: ArtRecipe = (_rng, variant) => {
+  const b = buf();
+  const shape = variant % 4;
+  if (shape === 0) {
+    // Obélisque ailé : fût central + ailes de béton.
+    rect(b, 7, 1, 2, 14, 2);
+    vline(b, 7, 1, 14, 3);
+    for (let i = 0; i < 5; i++) {
+      hline(b, 2 + i, 6, 5 + i, 2);
+      hline(b, 9, 13 - i, 5 + i, 2);
+      set(b, 2 + i, 5 + i, 3);
+      set(b, 13 - i, 5 + i, 0);
+    }
+    rect(b, 5, 14, 6, 2, 1); // socle
+  } else if (shape === 1) {
+    // Double arche : deux anneaux de béton imbriqués.
+    for (const [cx, r] of [[6, 5], [10, 4]] as const) {
+      for (let a = 0; a < 64; a++) {
+        const th = (a / 64) * Math.PI * 2;
+        const x = Math.round(cx + Math.cos(th) * r);
+        const y = Math.round(8 + Math.sin(th) * r);
+        set(b, x, y, a < 32 ? 3 : 2);
+      }
+    }
+    rect(b, 4, 14, 8, 2, 1);
+  } else if (shape === 2) {
+    // Fleur de béton (pétales rayonnants type Kosmaj).
+    const c = 8;
+    for (let p = 0; p < 6; p++) {
+      const th = (p / 6) * Math.PI * 2 - Math.PI / 2;
+      for (let r = 2; r < 7; r++) {
+        const x = Math.round(c + Math.cos(th) * r);
+        const y = Math.round(7 + Math.sin(th) * r);
+        set(b, x, y, 2);
+        set(b, x + 1, y, r > 4 ? 3 : 2);
+      }
+    }
+    rect(b, 7, 7, 2, 2, 3); // cœur
+    rect(b, 6, 14, 4, 2, 1);
+  } else if (shape === 3) {
+    // Monolithe incliné, percé d'un œil.
+    for (let i = 0; i < 12; i++) {
+      const x = 4 + Math.floor(i / 3);
+      rect(b, x, 14 - i, 5, 1, 2);
+      set(b, x, 14 - i, 3);
+    }
+    set(b, 8, 6, 0); set(b, 9, 6, 0); // l'œil
+    rect(b, 3, 14, 9, 2, 1);
+  } else if (shape === 4) {
+    // Crâne de béton — memento mori de la Rectitude.
+    rect(b, 4, 2, 8, 8, 3);
+    rect(b, 5, 1, 6, 1, 3);
+    set(b, 4, 2, 2); set(b, 11, 2, 2); // arrondi du crâne
+    rect(b, 5, 4, 2, 3, 0);  // orbite gauche
+    rect(b, 9, 4, 2, 3, 0);  // orbite droite
+    set(b, 7, 8, 0); set(b, 8, 8, 0); // cavité nasale
+    rect(b, 5, 10, 6, 3, 2); // mâchoire
+    for (let x = 5; x <= 10; x += 2) vline(b, x, 10, 12, 0); // dents
+    rect(b, 4, 14, 8, 2, 1); // socle
+  } else if (shape === 5) {
+    // La Chauve-Souris : ailes de béton déployées.
+    rect(b, 7, 4, 2, 9, 2);
+    vline(b, 7, 4, 12, 3);
+    set(b, 6, 3, 3); set(b, 9, 3, 3); // oreilles
+    for (let i = 0; i < 6; i++) {
+      // Membrane festonnée, symétrique.
+      const drop = i === 2 || i === 4 ? 1 : 0;
+      hline(b, 1 + i, 6, 5 + i + drop, 2);
+      hline(b, 9, 14 - i, 5 + i + drop, 2);
+      set(b, 1 + i, 5 + i + drop, 3);
+      set(b, 14 - i, 5 + i + drop, 0);
+    }
+    rect(b, 5, 14, 6, 2, 1);
+  } else if (shape === 6) {
+    // Pyramide en ruine : gradins ébréchés.
+    for (let row = 0; row < 6; row++) {
+      const y = 13 - row * 2;
+      const x0 = 2 + row;
+      const wRow = 12 - row * 2;
+      rect(b, x0, y, wRow, 2, 2);
+      hline(b, x0, x0 + wRow - 1, y, 3);
+      // Brèches : la ruine mange les gradins.
+      if (row === 1) { rect(b, x0 + 2, y, 2, 2, TRANSPARENT); }
+      if (row === 3) { rect(b, x0 + wRow - 2, y, 2, 2, TRANSPARENT); }
+      if (row === 5) { rect(b, x0, y, 1, 2, TRANSPARENT); }
+    }
+    set(b, 3, 15, 1); set(b, 12, 15, 1); // éboulis
+  } else {
+    // Menhir gravé : pierre levée aux bandes rituelles.
+    rect(b, 6, 2, 4, 13, 2);
+    vline(b, 6, 2, 14, 3);
+    set(b, 7, 1, 2); set(b, 8, 1, 2);
+    for (let y = 4; y < 14; y += 3) hline(b, 7, 9, y, 0); // gravures
+    rect(b, 5, 14, 6, 2, 1);
+  }
+  return b;
+};
+
+/** Menhir seul — pierre levée pour les cercles mégalithiques. */
+export const artMenhir: ArtRecipe = (rng) => {
+  const b = buf();
+  const wStone = 3 + Math.floor(rng() * 2);
+  const x0 = 6;
+  rect(b, x0, 3, wStone, 12, 2);
+  vline(b, x0, 3, 14, 3);
+  set(b, x0 + 1, 2, 2);
+  speckle(b, rng, 0, 4);
+  rect(b, x0 - 1, 14, wStone + 2, 2, 1);
+  return b;
+};
+
 /** Courbe de niveau topographique : trait fin pointillé vers les voisins connectés. */
 export const artContour: ArtRecipe = (_rng, variant) => {
   const b = buf();

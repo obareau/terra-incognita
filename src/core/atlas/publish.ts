@@ -70,8 +70,8 @@ export function upsertMarker(notes: string, marker: string): string {
 
 /** Genres de POI qui méritent une fiche Atlas, par échelle. */
 const PUBLISHABLE: Record<Scale, string[]> = {
-  region: ["city", "base", "ruin"],
-  city: ["qg", "caserne", "marche", "usine"],
+  region: ["city", "base", "ruin", "mystere"],
+  city: ["qg", "caserne", "marche", "usine", "memorial"],
   interior: [],
 };
 
@@ -83,6 +83,7 @@ const KIND_LABEL: Record<string, string> = {
   caserne: "Caserne C.G.U.",
   marche: "Marché",
   usine: "Complexe industriel",
+  memorial: "Mémorial C.G.U.",
 };
 
 const MAX_POIS = 12;

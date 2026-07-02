@@ -24,6 +24,7 @@ const legendCgu: Record<string, MacroCell> = {
   "†": { ...F, overlay: T.BANNER_CGU },
   "░": { ground: T.ROAD },
   "▒": { ground: T.PLAZA },
+  "▲": { ground: T.PLAZA, structure: T.SPOMENIK },
 };
 
 /** Caserne : enceinte métal, miradors aux angles, dortoirs, portail sud. */
@@ -69,7 +70,7 @@ export const qgCgu: Macro = {
     "█.............█",
     "█G....n......x█",
     "T█████===█████T",
-    "†▒▒▒▒▒▒▒▒▒▒▒▒▒†",
+    "†▒▒▒▒▒▒▲▒▒▒▒▒▒†",
     "¶▒▒▒▒▒▒▒▒▒▒▒▒▒¶",
   ],
 };
@@ -100,6 +101,34 @@ export const blocCellules: Macro = {
   ],
 };
 
+/** Mémorial : spomenik brutaliste sur esplanade de recueillement forcé. */
+export const memorial: Macro = {
+  id: "cgu.memorial",
+  tags: ["cgu", "monument"],
+  legend: legendCgu,
+  grid: [
+    "!▒▒▒▒▒!",
+    "▒▒▒▒▒▒▒",
+    "▒▒▒▲▒▒▒",
+    "▒▒▒▒▒▒▒",
+    "†▒▒▒▒▒†",
+  ],
+};
+
+/** Grand mémorial : double spomenik pour les capitales de la Rectitude. */
+export const grandMemorial: Macro = {
+  id: "cgu.grand-memorial",
+  tags: ["cgu", "monument"],
+  legend: legendCgu,
+  grid: [
+    "!▒▒▒▒▒▒▒▒!",
+    "▒▒▲▒▒▒▲▒▒▒",
+    "▒▒▒▒▲▒▒▒▒▒",
+    "▒▒▒▒▒▒▒▒▒▒",
+    "†▒¶▒▒▒▒¶▒†",
+  ],
+};
+
 /** Dépôt logistique : caisses sous grillage. */
 export const depot: Macro = {
   id: "cgu.depot",
@@ -114,4 +143,4 @@ export const depot: Macro = {
   ],
 };
 
-export const MACROS_CGU = [caserne, checkpoint, qgCgu, posteGarde, blocCellules, depot];
+export const MACROS_CGU = [caserne, checkpoint, qgCgu, posteGarde, blocCellules, depot, memorial, grandMemorial];

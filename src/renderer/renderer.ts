@@ -10,10 +10,14 @@ import { TILESET } from "../core/tiles/tileset";
 import { CanvasView } from "./canvasView";
 import { AsciiView } from "./asciiView";
 import { Chiptune } from "./chiptune";
+import { installBrowserShim } from "./shim";
 
 declare global {
   interface Window { terra: TerraApi }
 }
+
+// Hors Electron (démo web), fournit exports navigateur + Atlas hors-ligne.
+installBrowserShim();
 
 const $ = <T extends HTMLElement>(id: string): T => {
   const el = document.getElementById(id);

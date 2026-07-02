@@ -22,6 +22,8 @@ export function generate(scale: Scale, seed: string, params: GenParams): MapData
 
 /** Échelle enfant lors d'un clic sur un POI. */
 export function childScale(scale: Scale, poiKind: string): Scale | null {
+  // Les sites mystérieux et mémoriaux se contemplent — pas de descente.
+  if (poiKind === "mystere" || poiKind === "memorial") return null;
   if (scale === "region") {
     return poiKind === "base" ? "interior" : "city";
   }

@@ -7,7 +7,7 @@ import { chance, deriveSeed, int, rngFor, weighted, type Rng } from "../rng";
 import { createMap, fillGround, groundAt, paintGround, paintStructure, setGround, setOverlay, setStructure, structureAt } from "../mapdata";
 import { T } from "../tiles/tileset";
 import { areaIsFree, macroSize, stampMacro, type Macro } from "../macros/index";
-import { caserne, checkpoint, depot, qgCgu } from "../macros/cgu";
+import { caserne, checkpoint, depot, grandMemorial, memorial, qgCgu } from "../macros/cgu";
 import { courUsine, marche, marcheNoir, parc } from "../macros/civil";
 import { resolveStyle, type ArchStyle } from "../factions/styles";
 
@@ -187,7 +187,21 @@ export function generateCity(seed: string, params: GenParams, w = CITY_W, h = CI
         }
         break;
       }
-      case "parc": fillParc(map, rng, b); break;
+      case "parc": {
+        // Sous la Rectitude, le square devient mémorial : spomenik sur esplanade.
+        if (chance(rng, style.monumentChance)) {
+          const m = b.w >= 12 && chance(rng, 0.4) ? grandMemorial : memorial;
+          if (stampIfFits(map, rng, m, b)) {
+            map.pois.push({
+              x: b.x + Math.floor(b.w / 2), y: b.y + Math.floor(b.h / 2),
+              kind: "memorial", label: "Mémorial C.G.U.", childSeed: deriveSeed(seed, "memorial", b.x, b.y),
+            });
+            break;
+          }
+        }
+        fillParc(map, rng, b);
+        break;
+      }
       case "ruine": fillRuine(map, rng, b); break;
     }
   }

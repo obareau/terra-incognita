@@ -34,6 +34,7 @@ export const T = {
   ROOF_HAB: 25, ROOF_IND: 26, MIRADOR: 27, BARRIER: 28,
   TREE: 29, LAMP: 30, CRATE: 31, MACHINE: 32, GENERATOR: 33,
   BUNK: 34, TABLE: 35, CELL_BARS: 36, STALL: 37, TURRET: 38, RUIN_WALL: 39,
+  SPOMENIK: 40, MENHIR: 41,
   // Overlay
   PROPAGANDA: 50, GRAFFITI: 51, BANNER_CGU: 52,
   POI_CITY: 53, POI_BASE: 54, POI_RUIN: 55, CONTESTED: 56, CONTOUR: 57,
@@ -75,6 +76,8 @@ const defs: TileDef[] = [
   { id: T.STALL, name: "étal", layer: "structure", walkable: false, glyph: "S", colorRole: 3, variants: 3, art: art.artStall },
   { id: T.TURRET, name: "tourelle", layer: "structure", walkable: false, glyph: "T", colorRole: 3, art: art.artTurret },
   { id: T.RUIN_WALL, name: "mur effondré", layer: "structure", walkable: false, glyph: "%", colorRole: 2, variants: 4, art: art.artRuinWall },
+  { id: T.SPOMENIK, name: "spomenik C.G.U.", layer: "structure", walkable: false, glyph: "▲", colorRole: 3, variants: 8, art: art.artSpomenik },
+  { id: T.MENHIR, name: "menhir", layer: "structure", walkable: false, glyph: "Ω", colorRole: 2, variants: 3, art: art.artMenhir },
 
   { id: T.PROPAGANDA, name: "affiche C.G.U.", layer: "overlay", walkable: true, glyph: "¶", colorRole: 3, variants: 3, art: art.artPropaganda },
   { id: T.GRAFFITI, name: "graffiti", layer: "overlay", walkable: true, glyph: "\"", colorRole: 3, variants: 4, art: art.artGraffiti },

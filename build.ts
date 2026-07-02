@@ -41,6 +41,15 @@ async function main(): Promise<void> {
 
   fs.mkdirSync("dist", { recursive: true });
   fs.copyFileSync("src/renderer/index.html", "dist/index.html");
+
+  // Démo web (GitHub Pages) : le renderer est du web standard, le shim
+  // remplace l'IPC Electron — il suffit d'index.html + renderer.js.
+  fs.mkdirSync("dist-web", { recursive: true });
+  fs.copyFileSync("src/renderer/index.html", "dist-web/index.html");
+  fs.copyFileSync("dist/renderer.js", "dist-web/renderer.js");
+  if (!production && fs.existsSync("dist/renderer.js.map")) {
+    fs.copyFileSync("dist/renderer.js.map", "dist-web/renderer.js.map");
+  }
 }
 
 main().catch((e) => {
