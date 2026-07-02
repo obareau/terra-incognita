@@ -106,7 +106,10 @@ function setMap(map: MapData, label: string, pushCrumb: boolean): void {
   pixelView.fit();
   updateBreadcrumb();
   redraw();
-  if (chiptune.playing) chiptune.start(map.seed, map.params.ambiance);
+  if (chiptune.playing) {
+    chiptune.start(map.seed, map.params.ambiance);
+    $("trackInfo").textContent = `♪ ${chiptune.trackLabel}`;
+  }
 }
 
 function updateBreadcrumb(): void {
@@ -328,6 +331,10 @@ for (const id of ["cgu", "ruin"]) {
   $(id).addEventListener("input", syncSliderLabels);
 }
 
+function syncTrackInfo(): void {
+  $("trackInfo").textContent = chiptune.playing ? `♪ ${chiptune.trackLabel}` : "";
+}
+
 $("btnAudio").addEventListener("click", () => {
   if (chiptune.playing) {
     chiptune.stop();
@@ -336,6 +343,18 @@ $("btnAudio").addEventListener("click", () => {
     chiptune.start(state.map.seed, state.map.params.ambiance);
     $("btnAudio").textContent = "■ STOP";
   }
+  syncTrackInfo();
+});
+
+$("btnNextTrack").addEventListener("click", () => {
+  if (!state.map) return;
+  if (chiptune.playing) {
+    chiptune.next();
+  } else {
+    chiptune.start(state.map.seed, state.map.params.ambiance, chiptune.track + 1);
+    $("btnAudio").textContent = "■ STOP";
+  }
+  syncTrackInfo();
 });
 
 $("btnPng").addEventListener("click", () => {
