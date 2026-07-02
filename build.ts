@@ -50,6 +50,16 @@ async function main(): Promise<void> {
   if (!production && fs.existsSync("dist/renderer.js.map")) {
     fs.copyFileSync("dist/renderer.js.map", "dist-web/renderer.js.map");
   }
+
+  // Radio Robotariis — jukebox chiptune web (side project, même moteur).
+  await esbuild.build({
+    ...common,
+    entryPoints: ["src/radio/radio.ts"],
+    outfile: "dist-web/radio/radio.js",
+    platform: "browser",
+    format: "iife",
+  });
+  fs.copyFileSync("src/radio/index.html", "dist-web/radio/index.html");
 }
 
 main().catch((e) => {

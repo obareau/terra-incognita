@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Radio Robotariis — fréquence personnelle</title>
+<style>
+  :root {
+    --c0: #040804;
+    --c1: #1e4a24;
+    --c2: #5fae4e;
+    --c3: #d8ff9a;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    background: var(--c0);
+    color: var(--c3);
+    font-family: "DejaVu Sans Mono", "Consolas", monospace;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+  }
+  #radio {
+    width: min(560px, 100%);
+    border: 1px solid var(--c2);
+    padding: 22px;
+    position: relative;
+  }
+  #radio::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: repeating-linear-gradient(0deg, rgba(0,0,0,0.13) 0 1px, transparent 1px 3px);
+  }
+  h1 { font-size: 15px; letter-spacing: 3px; }
+  h1 span { color: var(--c2); }
+  .sub { font-size: 10px; color: var(--c2); letter-spacing: 1px; margin: 4px 0 16px; }
+  #screen {
+    border: 1px solid var(--c1);
+    background: #000;
+    padding: 12px;
+    margin-bottom: 14px;
+  }
+  #freq { font-size: 26px; letter-spacing: 2px; }
+  #freq small { font-size: 12px; color: var(--c2); }
+  #trackLine { margin-top: 6px; font-size: 12px; min-height: 15px; }
+  #programLine { font-size: 10px; color: var(--c2); margin-top: 2px; min-height: 12px; }
+  #scope { width: 100%; height: 72px; display: block; margin-top: 10px; image-rendering: pixelated; }
+  label { display: block; font-size: 10px; color: var(--c2); margin-bottom: 4px; letter-spacing: 1px; }
+  .row { display: flex; gap: 8px; }
+  input, button {
+    background: var(--c0);
+    color: var(--c3);
+    border: 1px solid var(--c2);
+    font-family: inherit;
+    font-size: 13px;
+    padding: 7px 10px;
+  }
+  input[type="date"] { flex: 1; color-scheme: dark; }
+  button { cursor: pointer; letter-spacing: 1px; }
+  button:hover { background: var(--c1); }
+  button.primary { background: var(--c1); font-weight: bold; }
+  button.primary:hover { background: var(--c2); color: var(--c0); }
+  footer { margin-top: 14px; font-size: 10px; color: var(--c1); display: flex; justify-content: space-between; }
+  footer a { color: var(--c2); text-decoration: none; }
+</style>
+</head>
+<body>
+  <div id="radio">
+    <h1>RADIO ROBOTARIIS <span>// ÉMETTEUR PIRATE</span></h1>
+    <div class="sub">CHAQUE AUDITEUR A SA FRÉQUENCE. CHAQUE HEURE A SON PROGRAMME.</div>
+    <div id="screen">
+      <div id="freq">—.— <small>MHz</small></div>
+      <div id="trackLine">Réglez votre fréquence : entrez votre date de naissance.</div>
+      <div id="programLine"></div>
+      <canvas id="scope" width="512" height="72"></canvas>
+    </div>
+    <label for="birthday">DATE DE NAISSANCE DE L'AUDITEUR</label>
+    <div class="row">
+      <input type="date" id="birthday">
+      <button id="btnTune" class="primary">⏻ TUNE IN</button>
+      <button id="btnSkip" title="Morceau suivant">⏭</button>
+    </div>
+    <footer>
+      <div>La même date, la même heure : la même onde.</div>
+      <div><a href="../">TERRA-INCOGNITA ▸</a></div>
+    </footer>
+  </div>
+  <script src="radio.js"></script>
+</body>
+</html>

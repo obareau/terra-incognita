@@ -10,6 +10,11 @@
 **▶ [Démo web jouable](https://obareau.github.io/terra-incognita/)** — génération, vues pixel/ASCII,
 chiptune et exports dans le navigateur (mode libre ; le lien Atlas ⇄ est réservé à l'app desktop).
 
+**📻 [Radio Robotariis](https://obareau.github.io/terra-incognita/radio/)** — jukebox chiptune généré
+à la volée : votre date de naissance × l'heure d'écoute = votre fréquence personnelle. La grille des
+programmes suit l'heure (marches le matin, blues clandestin le soir, requiems la nuit) et l'onde
+change à l'heure pile. Même date + même heure = même musique, partout.
+
 Terra-Incognita génère des cartes **entièrement procédurales** à trois échelles, dans une esthétique
 Game Boy / écran radar : tiles pixel art 16×16 **dessinés par le code** (zéro asset externe),
 macros « Lego » (caserne C.G.U., checkpoint, marché noir…), vue ASCII/TUI, chiptune génératif,

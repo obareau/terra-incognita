@@ -149,6 +149,8 @@ export class Chiptune {
   private seed = "";
   private ambiance: Ambiance = "neutre";
   track = 0;
+  /** Analyseur branché sur le master — pour les visualisations (radio). */
+  analyser: AnalyserNode | null = null;
 
   get playing(): boolean {
     return this.timer !== null;
@@ -173,9 +175,13 @@ export class Chiptune {
     lp.frequency.value = 2400;
     const master = this.ctx.createGain();
     lp.connect(master);
-    master.connect(this.ctx.destination);
+    const analyser = this.ctx.createAnalyser();
+    analyser.fftSize = 1024;
+    master.connect(analyser);
+    analyser.connect(this.ctx.destination);
     this.out = lp;
     this.master = master;
+    this.analyser = analyser;
 
     const nb = this.ctx.createBuffer(1, this.ctx.sampleRate / 8, this.ctx.sampleRate);
     const data = nb.getChannelData(0);
@@ -204,8 +210,10 @@ export class Chiptune {
     }
     this.out?.disconnect();
     this.master?.disconnect();
+    this.analyser?.disconnect();
     this.out = null;
     this.master = null;
+    this.analyser = null;
   }
 
   private voice(type: OscillatorType, freq: number, t0: number, dur: number, gain: number, detune = 0): void {
