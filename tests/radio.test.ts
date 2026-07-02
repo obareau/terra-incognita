@@ -1,4 +1,4 @@
-import { ambianceForHour, frequencyFor, hourKey, msUntilNextHour, stationSeed } from "../src/radio/logic";
+import { ambianceForHour, announcementFor, frequencyFor, hourKey, msUntilNextHour, stationSeed } from "../src/radio/logic";
 
 describe("Radio Robotariis — logique de station", () => {
   test("même anniversaire + même heure → même seed (onde partagée)", () => {
@@ -33,5 +33,25 @@ describe("Radio Robotariis — logique de station", () => {
     const d = new Date(2026, 6, 2, 21, 58, 0);
     expect(msUntilNextHour(d)).toBe(2 * 60 * 1000);
     expect(hourKey(d)).toBe("2026-07-02T21");
+  });
+});
+
+describe("speakerine — annonces", () => {
+  test("déterministe : même seed → même annonce", () => {
+    expect(announcementFor("radio:x:2026-07-02T21", 0, "marche", 21, "103.3"))
+      .toBe(announcementFor("radio:x:2026-07-02T21", 0, "marche", 21, "103.3"));
+  });
+
+  test("l'ouverture d'antenne annonce fréquence et heure", () => {
+    const a = announcementFor("radio:x:2026-07-02T21", 0, "marche", 21, "103.3");
+    expect(a).toContain("103 point 3");
+    expect(a).toContain("21 heures");
+    expect(a).toContain("Radio Robotariis");
+  });
+
+  test("les pistes suivantes présentent le genre sans redonner l'heure", () => {
+    const a = announcementFor("radio:x:2026-07-02T21", 2, "requiem", 21, "103.3");
+    expect(a).not.toContain("heures");
+    expect(a.toLowerCase()).toContain("requiem");
   });
 });

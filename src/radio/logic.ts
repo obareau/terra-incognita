@@ -40,3 +40,44 @@ export function msUntilNextHour(d: Date): number {
   next.setHours(d.getHours() + 1, 0, 0, 0);
   return next.getTime() - d.getTime();
 }
+
+// ── Speakerine de la station ─────────────────────────────────────────
+
+import { rngFor, pick } from "../core/rng";
+
+const STATION_IDS = [
+  "Ici Radio Robotariis. Émetteur pirate.",
+  "Vous êtes sur Radio Robotariis. Personne d'autre n'écoute cette onde.",
+  "Radio Robotariis. La fréquence est à vous, pour une heure encore.",
+  "Ici Radio Robotariis, quelque part entre deux relais du réseau.",
+];
+
+const EPHEMERE = [
+  "Ce morceau ne repassera jamais.",
+  "Profitez-en. Cette musique s'éteindra avec l'heure.",
+  "Vous êtes seul à entendre ceci. Ou presque.",
+  "Le Conseil ignore cette fréquence. Restez discret.",
+  "Archiver cette onde est un acte de résistance.",
+];
+
+const GENRE_INTROS: Record<string, string[]> = {
+  marche: ["Une marche, pour tenir le pas.", "Le pas cadencé de la Rectitude. Écoutez-le pour mieux le connaître."],
+  hymne: ["Un hymne, comme au temps des processions.", "Voix hautes. Un hymne."],
+  blues: ["Un blues, de ceux qu'on joue dans les arrière-salles.", "Pour les inadaptés du système : un blues."],
+  berceuse: ["Une berceuse, pour ceux qui veillent.", "Baissez les lampes. Une berceuse."],
+  drone: ["Les machines chantent aussi. Écoutez.", "Un drone, monté des niveaux inférieurs."],
+  requiem: ["Un requiem, pour ce qui ne reviendra pas.", "En mémoire de ce que nous étions : un requiem."],
+};
+
+/** Annonce parlée avant un morceau — déterministe par seed et piste. */
+export function announcementFor(seed: string, track: number, genre: string, hour: number, freq: string): string {
+  const rng = rngFor(seed, `voice:${track}`);
+  const parts: string[] = [];
+  if (track === 0) {
+    parts.push(pick(rng, STATION_IDS));
+    parts.push(`${freq.replace(".", " point ")} mégahertz. Il est ${hour} heures.`);
+  }
+  parts.push(pick(rng, GENRE_INTROS[genre] ?? [`${genre}.`]));
+  if (track !== 0 && rng() < 0.5) parts.push(pick(rng, EPHEMERE));
+  return parts.join(" ");
+}

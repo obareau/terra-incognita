@@ -3,7 +3,8 @@
 // est personnelle, mais reproductible (même date + même heure = même onde).
 
 import { buildSong, Chiptune, TRACKS_PER_MAP } from "../renderer/chiptune";
-import { ambianceForHour, frequencyFor, msUntilNextHour, stationSeed } from "./logic";
+import { ambianceForHour, announcementFor, frequencyFor, msUntilNextHour, stationSeed } from "./logic";
+import { initVoice, shutUp, speak, voiceAvailable } from "./voice";
 
 const $ = <T extends HTMLElement>(id: string): T => document.getElementById(id) as T;
 
@@ -13,6 +14,7 @@ const state = {
   playing: false,
   trackTimer: 0,
   hourTimer: 0,
+  voice: localStorage.getItem("radio-voice") !== "off",
 };
 
 function currentProgram(): { seed: string; ambiance: ReturnType<typeof ambianceForHour> } {
@@ -40,12 +42,24 @@ function updateScreen(): void {
 
 function playTrack(track: number): void {
   const { seed, ambiance } = currentProgram();
-  chiptune.start(seed, ambiance, track);
-  updateScreen();
   clearTimeout(state.trackTimer);
-  state.trackTimer = window.setTimeout(() => {
-    playTrack((chiptune.track + 1) % TRACKS_PER_MAP);
-  }, songDurationMs(seed, ambiance, track));
+  const begin = (): void => {
+    if (!state.playing) return; // l'auditeur a coupé pendant l'annonce
+    chiptune.start(seed, ambiance, track);
+    updateScreen();
+    state.trackTimer = window.setTimeout(() => {
+      playTrack((chiptune.track + 1) % TRACKS_PER_MAP);
+    }, songDurationMs(seed, ambiance, track));
+  };
+  if (state.voice && voiceAvailable()) {
+    chiptune.stop();
+    const song = buildSong(seed, ambiance, track);
+    const text = announcementFor(seed, track, song.genre, new Date().getHours(), frequencyFor(state.birthday));
+    $("trackLine").textContent = "🎙 …";
+    speak(text, begin);
+  } else {
+    begin();
+  }
 }
 
 function scheduleHourChange(): void {
@@ -74,6 +88,7 @@ function tuneIn(): void {
 function tuneOut(): void {
   state.playing = false;
   chiptune.stop();
+  shutUp();
   clearTimeout(state.trackTimer);
   clearTimeout(state.hourTimer);
   $("btnTune").textContent = "⏻ TUNE IN";
@@ -83,6 +98,12 @@ function tuneOut(): void {
 $("btnTune").addEventListener("click", () => (state.playing ? tuneOut() : tuneIn()));
 $("btnSkip").addEventListener("click", () => {
   if (state.playing) playTrack((chiptune.track + 1) % TRACKS_PER_MAP);
+});
+$("btnVoice").addEventListener("click", () => {
+  state.voice = !state.voice;
+  localStorage.setItem("radio-voice", state.voice ? "on" : "off");
+  if (!state.voice) shutUp();
+  $("btnVoice").textContent = state.voice ? "🎙 ON" : "🎙 OFF";
 });
 
 // ── Oscilloscope phosphore ───────────────────────────────────────────
@@ -120,4 +141,6 @@ if (saved) {
   $<HTMLInputElement>("birthday").value = saved;
   $("freq").innerHTML = `${frequencyFor(saved)} <small>MHz</small>`;
 }
+initVoice();
+$("btnVoice").textContent = state.voice ? "🎙 ON" : "🎙 OFF";
 drawScope();
