@@ -1,6 +1,6 @@
 {
   "name": "terra-incognita",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "description": "Générateur de cartes procédural rétrofuturiste pour l'univers ROBOTARIIS — tiles pixel art, macros, rendu ASCII/TUI, chiptune, ancré sur l'Atlas.",
   "author": "Olivier Bareau",
   "license": "MIT",
@@ -26,11 +26,20 @@
       "package.json"
     ],
     "linux": {
-      "target": ["AppImage"],
+      "target": [
+        "AppImage"
+      ],
       "category": "Graphics"
     },
     "win": {
-      "target": [{ "target": "portable", "arch": ["x64"] }]
+      "target": [
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
     }
   },
   "devDependencies": {

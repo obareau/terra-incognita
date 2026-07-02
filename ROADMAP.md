@@ -27,8 +27,15 @@
 
 | 8 | **Lien Atlas bidirectionnel** : PUBLIER VERS L'ATLAS (POI → nœuds `membre` + marqueur canonique dans les notes), lecture prioritaire de la carte canonique ⚓ | testé e2e sur sandbox (DB copiée, port 5599) : 12 nœuds créés, idempotent, carte canonique reproduite à l'identique | ✅ 2026-07-02 |
 
-**MVP = phases 0–2 — atteint. v0.2.0 : Atlas bidirectionnel.**
-29 tests jest verts. Reste à valider à l'oreille : le chiptune (bouton ▶ CHIPTUNE).
+| 9 | **Styles d'architecture par faction** : 6 archétypes ancrés dans les fiches canon (martial, liturgique, clandestin, organique, industriel, civique), faction dominante → style, override UI | ville organique ≠ ville martiale à seed égale | ✅ 2026-07-02 |
+| 10 | **Monuments** : 8 spomeniks (crâne, chauve-souris, pyramide en ruine…), mémoriaux en ville, sites mystérieux en région (crop circles, Nazca, cromlech), publiables vers l'Atlas | visibles + déterministes | ✅ 2026-07-02 |
+| 11 | **Lisibilité** : contraste des palettes renforcé, scanlines allégées, courbes de niveau topographiques en région | relief lisible façon état-major | ✅ 2026-07-02 |
+| 12 | **Démo web GitHub Pages** : shim navigateur (exports, mode libre), déploiement auto sur push | https://obareau.github.io/terra-incognita/ | ✅ 2026-07-02 |
+| 13 | **Jukebox chiptune** : 6 genres (marche, hymne, blues, berceuse, drone, requiem), 5 morceaux/carte, structure couplet/refrain | requiem validé par Olivier | ✅ 2026-07-02 |
+| 14 | **Radio Robotariis** (side project, /radio/) : onde unique par TUNE IN (anniversaire × instant, salée à la seconde), grille horaire, speakerine Web Speech, annonces par grammaire combinatoire lore, compteur de lignes auto | https://obareau.github.io/terra-incognita/radio/ | ✅ 2026-07-02 |
+
+**MVP = phases 0–2 — atteint. v0.3.0 : styles de faction, monuments, web + radio.**
+53 tests jest verts. Chiptune : requiem validé à l'oreille ; les 5 autres genres restent à écouter.
 
 ## Après v1 (idées)
 

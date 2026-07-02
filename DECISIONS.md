@@ -43,6 +43,26 @@
 - **6 archétypes** plutôt que 38 styles individuels : martial, liturgique, clandestin, organique, industriel, civique — chaque faction canon est assignée à un archétype d'après sa fiche `02-FACTIONS/*.md` (ex. Pasteurs = « architecture sacrée-technologique » → liturgique). Un style par faction aurait été ingérable et visuellement illisible.
 - La **faction dominante** (tri par poids de relation : membre/parent > allié > connecté > ennemi) impose le style ; override manuel possible dans l'UI (`GenParams.archStyle`).
 
+## 2026-07-02 — Radio Robotariis (v0.3.0)
+
+### Retenu
+- **Onde salée à l'instant du TUNE IN** (minute+seconde dans la seed) : demandé par Olivier après avoir constaté que relancer rejouait le même programme. On perd le « même date + même heure = même onde partagée » du concept initial au profit d'un « une seule fois dans votre vie » littéral.
+- **Speakerine Web Speech API** (pitch 0.55) plutôt qu'un TTS pré-généré ou une API : 100 % navigateur, zéro asset, et le rendu synthétique colle à l'univers. Garde-fou : la musique reprend même si la synthèse échoue.
+- **Annonces par grammaire combinatoire seedée** (gabarits + lexiques lore) plutôt que phrases fixes : des dizaines de milliers de variantes en ~60 lignes. Élision française post-traitement (de les → des).
+- **Compteur de lignes injecté au build** ({{RADIO_LOC}}) : le descriptif ne peut pas mentir.
+
+### Écarté
+| Option | Raison du rejet |
+|---|---|
+| Repo séparé pour la radio | Réutilise le moteur chiptune de T-I ; une page de plus dans le même déploiement Pages suffit. |
+| TTS de qualité (API cloud, voix pré-générées) | Casserait le « tout est calculé dans votre navigateur » ; à reconsidérer si la voix système déçoit. |
+
+### Échecs / pièges rencontrés (v0.3)
+- **GitHub Pages `deploy-pages` échoue par intermittence** (« Deployment failed, try again later ») : trois occurrences le 2026-07-02 — un simple re-run suffit. Les scripts de vérification post-push font maintenant un rerun automatique.
+- **Grammaire française** : les gabarits à trous produisent « de les Briseurs » → élision en post-traitement dans `expand()`.
+
+## 2026-07-02 — Lien Atlas bidirectionnel (v0.2.0), suite
+
 ### Échecs / pièges rencontrés
 - **Plafond MAX_POIS sur les nœuds créés** (2026-07-02) : comptait les créations au lieu des POI traités → une re-publication créait un 13ᵉ nœud. Corrigé : le plafond porte sur les POI traités, sélection stable.
 - **`uv run python -c` sans deps** : robotariis-graph n'a pas de pyproject → `--with flask` obligatoire pour lancer l'instance sandbox.
