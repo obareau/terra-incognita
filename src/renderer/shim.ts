@@ -13,6 +13,8 @@ function download(name: string, href: string): void {
 
 export function installBrowserShim(): void {
   if (window.terra) return; // Electron : le preload a déjà posé l'API.
+  // Version web : le lien vers la Radio Robotariis a du sens ici.
+  document.getElementById("radioLink")?.removeAttribute("hidden");
   const shim: TerraApi = {
     atlas: {
       load: async () => ({ online: false, fromCache: false, graph: null }),
