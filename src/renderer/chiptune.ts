@@ -14,18 +14,18 @@ const SCALES: Record<Ambiance, number[]> = {
   ruine: [0, 1, 5, 7, 8],              // phrygien réduit : désolation
 };
 
-type Genre = "marche" | "hymne" | "blues" | "berceuse" | "drone";
+type Genre = "marche" | "hymne" | "blues" | "berceuse" | "drone" | "requiem";
 
 /** Ordre des morceaux par ambiance — le morceau 1 colle au lieu. */
 const PLAYLISTS: Record<Ambiance, Genre[]> = {
-  militaire: ["marche", "hymne", "drone", "berceuse"],
-  industriel: ["drone", "marche", "blues", "berceuse"],
-  clandestin: ["blues", "berceuse", "drone", "marche"],
-  neutre: ["berceuse", "blues", "hymne", "marche"],
-  ruine: ["drone", "berceuse", "hymne", "blues"],
+  militaire: ["marche", "hymne", "drone", "requiem", "berceuse"],
+  industriel: ["drone", "marche", "blues", "requiem", "berceuse"],
+  clandestin: ["blues", "berceuse", "drone", "requiem", "marche"],
+  neutre: ["berceuse", "blues", "hymne", "marche", "requiem"],
+  ruine: ["requiem", "drone", "berceuse", "hymne", "blues"],
 };
 
-export const TRACKS_PER_MAP = 4;
+export const TRACKS_PER_MAP = 5;
 const STEPS = 16;
 
 type Drum = "kick" | "snare" | "hat" | null;
@@ -62,16 +62,23 @@ interface GenreSpec {
   kickEvery: number;    // 0 = pas de kick
   snare: boolean;
   hatChance: number;
-  harmony: boolean;     // voix haute en tierce/quinte
+  harmony: boolean;     // seconde voix
+  /** Intervalles possibles de la seconde voix (demi-tons). */
+  harmonyIv: [number, number];
   bassEvery: number;
+  /** true → mélodie à tendance descendante (lamento). */
+  descend?: boolean;
 }
 
 const GENRES: Record<Genre, GenreSpec> = {
-  marche: { tempo: [96, 116], density: 0.8, noteLen: 0.1, swing: 0, level: 0.17, melodyWave: "square", kickEvery: 4, snare: true, hatChance: 0.6, harmony: false, bassEvery: 2 },
-  hymne: { tempo: [58, 70], density: 0.55, noteLen: 0.5, swing: 0, level: 0.15, melodyWave: "square", kickEvery: 8, snare: false, hatChance: 0.1, harmony: true, bassEvery: 4 },
-  blues: { tempo: [78, 92], density: 0.6, noteLen: 0.2, swing: 0.28, level: 0.16, melodyWave: "square", kickEvery: 4, snare: false, hatChance: 0.7, harmony: false, bassEvery: 2 },
-  berceuse: { tempo: [64, 76], density: 0.45, noteLen: 0.34, swing: 0.1, level: 0.13, melodyWave: "triangle", kickEvery: 0, snare: false, hatChance: 0.15, harmony: true, bassEvery: 4 },
-  drone: { tempo: [66, 74], density: 0.25, noteLen: 0.9, swing: 0, level: 0.15, melodyWave: "sawtooth", kickEvery: 8, snare: false, hatChance: 0.25, harmony: false, bassEvery: 8 },
+  marche: { tempo: [96, 116], density: 0.8, noteLen: 0.1, swing: 0, level: 0.17, melodyWave: "square", kickEvery: 4, snare: true, hatChance: 0.6, harmony: false, harmonyIv: [7, 4], bassEvery: 2 },
+  hymne: { tempo: [58, 70], density: 0.55, noteLen: 0.5, swing: 0, level: 0.15, melodyWave: "square", kickEvery: 8, snare: false, hatChance: 0.1, harmony: true, harmonyIv: [7, 4], bassEvery: 4 },
+  blues: { tempo: [78, 92], density: 0.6, noteLen: 0.2, swing: 0.28, level: 0.16, melodyWave: "square", kickEvery: 4, snare: false, hatChance: 0.7, harmony: false, harmonyIv: [7, 4], bassEvery: 2 },
+  berceuse: { tempo: [64, 76], density: 0.45, noteLen: 0.34, swing: 0.1, level: 0.13, melodyWave: "triangle", kickEvery: 0, snare: false, hatChance: 0.15, harmony: true, harmonyIv: [7, 4], bassEvery: 4 },
+  drone: { tempo: [66, 74], density: 0.25, noteLen: 0.9, swing: 0, level: 0.15, melodyWave: "sawtooth", kickEvery: 8, snare: false, hatChance: 0.25, harmony: false, harmonyIv: [7, 4], bassEvery: 8 },
+  // Requiem : lamento descendant au triangle, glas grave tous les 16 pas,
+  // cloche haute (quinte + octave) en écho — lent et mélancolique.
+  requiem: { tempo: [46, 56], density: 0.5, noteLen: 0.9, swing: 0, level: 0.13, melodyWave: "triangle", kickEvery: 16, snare: false, hatChance: 0.04, harmony: true, harmonyIv: [3, 19], bassEvery: 8, descend: true },
 };
 
 function buildPattern(rng: Rng, scale: number[], spec: GenreSpec, transpose: number): Pattern {
@@ -79,14 +86,17 @@ function buildPattern(rng: Rng, scale: number[], spec: GenreSpec, transpose: num
   const harmony: (number | null)[] = [];
   const bass: (number | null)[] = [];
   const drums: Drum[] = [];
-  let degree = int(rng, 0, scale.length - 1);
+  let degree = spec.descend ? scale.length + int(rng, 0, scale.length - 1) : int(rng, 0, scale.length - 1);
   for (let i = 0; i < STEPS; i++) {
     if (chance(rng, spec.density)) {
-      degree = Math.max(0, Math.min(scale.length * 2 - 1, degree + int(rng, -2, 2)));
+      // Lamento : la ligne descend, puis reprend souffle dans l'aigu.
+      const stepIv = spec.descend ? int(rng, -2, 1) : int(rng, -2, 2);
+      degree = Math.max(0, Math.min(scale.length * 2 - 1, degree + stepIv));
+      if (spec.descend && degree === 0) degree = scale.length + int(rng, 0, 2);
       const oct = Math.floor(degree / scale.length);
       const note = scale[degree % scale.length] + 12 * (1 + oct) + transpose;
       melody.push(note);
-      harmony.push(spec.harmony && chance(rng, 0.7) ? note + (chance(rng, 0.5) ? 7 : 4) : null);
+      harmony.push(spec.harmony && chance(rng, 0.7) ? note + (chance(rng, 0.5) ? spec.harmonyIv[0] : spec.harmonyIv[1]) : null);
     } else {
       melody.push(null);
       harmony.push(null);

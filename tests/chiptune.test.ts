@@ -19,6 +19,14 @@ describe("jukebox chiptune", () => {
     expect(buildSong("x", "militaire", 0).genre).toBe("marche");
     expect(buildSong("x", "clandestin", 0).genre).toBe("blues");
     expect(buildSong("x", "industriel", 0).genre).toBe("drone");
+    expect(buildSong("x", "ruine", 0).genre).toBe("requiem");
+  });
+
+  test("le requiem est lent et grave", () => {
+    const r = buildSong("x", "ruine", 0);
+    expect(r.genre).toBe("requiem");
+    expect(r.tempo).toBeLessThanOrEqual(56);
+    expect(r.melodyWave).toBe("triangle");
   });
 
   test("structure : 4 patterns enchaînés en couplets/refrains", () => {
