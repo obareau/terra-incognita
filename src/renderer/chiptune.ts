@@ -3,7 +3,7 @@
 // de la seed. 4 voix WebAudio : 2 square, 1 triangle, 1 bruit.
 
 import type { Ambiance } from "../shared/types";
-import { chance, int, rngFor, type Rng } from "../core/rng";
+import { chance, int, pick, rngFor, type Rng } from "../core/rng";
 
 // Intervalles (demi-tons) par ambiance — mineur harmonique pour le C.G.U.
 const SCALES: Record<Ambiance, number[]> = {
@@ -32,9 +32,33 @@ type Drum = "kick" | "snare" | "hat" | null;
 
 interface Pattern {
   melody: (number | null)[];
+  /** Durée de chaque note en pas (les pas couverts par une tenue restent null). */
+  melLen: number[];
   harmony: (number | null)[];
   bass: (number | null)[];
   drums: Drum[];
+}
+
+/** Progressions d'accords (degrés de gamme), 1 accord par mesure de 4 pas. */
+const PROGRESSIONS: Record<Genre, number[][]> = {
+  marche: [[0, 3, 4, 0], [0, 5, 4, 0]],
+  hymne: [[0, 5, 3, 4], [0, 3, 5, 4]],
+  blues: [[0, 0, 3, 4], [0, 3, 0, 4]],
+  berceuse: [[0, 4, 5, 3], [0, 5, 0, 4]],
+  drone: [[0, 0, 0, 0]],
+  requiem: [[0, 5, 3, 2], [0, 1, 0, 4]],
+};
+
+/** Cellules rythmiques d'une mesure (durées en pas, somme = 4). */
+const RHYTHMS: number[][] = [
+  [1, 1, 1, 1], [2, 1, 1], [1, 1, 2], [2, 2], [1, 2, 1], [3, 1], [4],
+];
+
+/** Degré de gamme (peut dépasser l'octave) → demi-tons. */
+function degTone(scale: number[], deg: number): number {
+  const L = scale.length;
+  const d = ((deg % L) + L) % L;
+  return scale[d] + 12 * Math.floor(deg / L);
 }
 
 interface Song {
@@ -81,38 +105,86 @@ const GENRES: Record<Genre, GenreSpec> = {
   requiem: { tempo: [46, 56], density: 0.5, noteLen: 0.9, swing: 0, level: 0.13, melodyWave: "triangle", kickEvery: 16, snare: false, hatChance: 0.04, harmony: true, harmonyIv: [3, 19], bassEvery: 8, descend: true },
 };
 
-function buildPattern(rng: Rng, scale: number[], spec: GenreSpec, transpose: number): Pattern {
-  const melody: (number | null)[] = [];
-  const harmony: (number | null)[] = [];
-  const bass: (number | null)[] = [];
-  const drums: Drum[] = [];
-  let degree = spec.descend ? scale.length + int(rng, 0, scale.length - 1) : int(rng, 0, scale.length - 1);
-  for (let i = 0; i < STEPS; i++) {
-    if (chance(rng, spec.density)) {
-      // Lamento : la ligne descend, puis reprend souffle dans l'aigu.
-      const stepIv = spec.descend ? int(rng, -2, 1) : int(rng, -2, 2);
-      degree = Math.max(0, Math.min(scale.length * 2 - 1, degree + stepIv));
-      if (spec.descend && degree === 0) degree = scale.length + int(rng, 0, 2);
-      const oct = Math.floor(degree / scale.length);
-      const note = scale[degree % scale.length] + 12 * (1 + oct) + transpose;
-      melody.push(note);
-      harmony.push(spec.harmony && chance(rng, 0.7) ? note + (chance(rng, 0.5) ? spec.harmonyIv[0] : spec.harmonyIv[1]) : null);
+/** Note d'accord (fondamentale/tierce/quinte) la plus proche — ancrage harmonique. */
+function nearestChordTone(chord: number, deg: number): number {
+  let best = chord;
+  for (const c of [chord - 7, chord - 5, chord - 3, chord, chord + 2, chord + 4, chord + 7]) {
+    if (Math.abs(c - deg) < Math.abs(best - deg)) best = c;
+  }
+  return best;
+}
+
+/**
+ * Une mesure mélodique : cellule rythmique + contour ancré sur l'accord.
+ * Temps fort = note d'accord ; temps faibles = mouvement conjoint.
+ * Renvoie les degrés joués (pour la séquence : mesure suivante = motif transposé).
+ */
+function writeMeasure(
+  rng: Rng, p: Pattern, scale: number[], spec: GenreSpec, transpose: number,
+  bar: number, chord: number, rhythm: number[],
+  replay: { degs: number[]; rhythm: number[] } | null, cadence: boolean,
+): { degs: number[]; rhythm: number[] } {
+  const degs: number[] = [];
+  let pos = 0;
+  let deg = replay ? replay.degs[0] + chord : chord + (chance(rng, 0.5) ? 2 : 0);
+  const r = replay ? replay.rhythm : rhythm;
+  for (let k = 0; k < r.length && pos < 4; k++) {
+    const dur = Math.min(r[k], 4 - pos);
+    const step = bar * 4 + pos;
+    const strong = pos === 0;
+    if (strong || chance(rng, spec.density + 0.15)) {
+      if (replay) {
+        deg = replay.degs[k] + chord; // séquence : motif transposé sur l'accord
+      } else if (strong) {
+        deg = nearestChordTone(chord, deg);
+      } else {
+        deg += spec.descend ? int(rng, -2, 1) : int(rng, -2, 2);
+      }
+      if (cadence && k === r.length - 1) deg = chord; // la phrase retombe sur la fondamentale
+      deg = Math.max(-2, Math.min(scale.length * 2, deg));
+      p.melody[step] = degTone(scale, deg) + 12 + transpose;
+      p.melLen[step] = dur;
+      if (spec.harmony && dur >= 2 && chance(rng, 0.75)) {
+        p.harmony[step] = p.melody[step]! + (chance(rng, 0.5) ? spec.harmonyIv[0] : spec.harmonyIv[1]);
+      }
+      degs.push(replay ? replay.degs[k] : deg - chord);
     } else {
-      melody.push(null);
-      harmony.push(null);
+      degs.push(deg - chord);
     }
-    bass.push(
-      spec.bassEvery > 0 && i % spec.bassEvery === 0
-        ? scale[0] + transpose + (chance(rng, 0.3) ? scale[4 % scale.length] : 0)
-        : null,
-    );
+    pos += dur;
+  }
+  return { degs, rhythm: r };
+}
+
+function buildPattern(rng: Rng, scale: number[], spec: GenreSpec, transpose: number, genre: Genre): Pattern {
+  const p: Pattern = {
+    melody: new Array<number | null>(STEPS).fill(null),
+    melLen: new Array<number>(STEPS).fill(0),
+    harmony: new Array<number | null>(STEPS).fill(null),
+    bass: new Array<number | null>(STEPS).fill(null),
+    drums: new Array<Drum>(STEPS).fill(null),
+  };
+  const prog = pick(rng, PROGRESSIONS[genre]);
+  // Développement : motif A, séquence de A sur l'accord suivant, contraste B, cadence.
+  const motifA = writeMeasure(rng, p, scale, spec, transpose, 0, prog[0], pick(rng, RHYTHMS), null, false);
+  writeMeasure(rng, p, scale, spec, transpose, 1, prog[1], motifA.rhythm, motifA, false);
+  writeMeasure(rng, p, scale, spec, transpose, 2, prog[2], pick(rng, RHYTHMS), null, false);
+  writeMeasure(rng, p, scale, spec, transpose, 3, prog[3], pick(rng, [[2, 2], [1, 1, 2], [4]]), null, true);
+
+  for (let i = 0; i < STEPS; i++) {
+    // Basse : fondamentale de l'accord de la mesure, quinte en relance.
+    if (spec.bassEvery > 0 && i % spec.bassEvery === 0) {
+      const chord = prog[Math.floor(i / 4)];
+      const fifth = i % 4 === 2 && chance(rng, 0.5);
+      p.bass[i] = degTone(scale, fifth ? chord + 4 : chord) + transpose;
+    }
     let d: Drum = null;
     if (spec.kickEvery > 0 && i % spec.kickEvery === 0) d = "kick";
     else if (spec.snare && i % 8 === 4) d = "snare";
     else if (chance(rng, spec.hatChance)) d = "hat";
-    drums.push(d);
+    p.drums[i] = d;
   }
-  return { melody, harmony, bass, drums };
+  return p;
 }
 
 export function buildSong(seed: string, ambiance: Ambiance, track: number): Song {
@@ -121,10 +193,10 @@ export function buildSong(seed: string, ambiance: Ambiance, track: number): Song
   const rng = rngFor(seed, `audio:${track}:${genre}`);
   const scale = SCALES[ambiance];
   // A = couplet, A' = variation rythmique, B = refrain transposé, C = pont dépouillé.
-  const a = buildPattern(rng, scale, spec, 0);
-  const a2 = buildPattern(rng, scale, spec, 0);
-  const b = buildPattern(rng, scale, spec, chance(rng, 0.5) ? 5 : 3);
-  const c = buildPattern(rng, scale, { ...spec, density: spec.density * 0.4, hatChance: spec.hatChance * 0.5 }, 0);
+  const a = buildPattern(rng, scale, spec, 0, genre);
+  const a2 = buildPattern(rng, scale, spec, 0, genre);
+  const b = buildPattern(rng, scale, spec, chance(rng, 0.5) ? 5 : 3, genre);
+  const c = buildPattern(rng, scale, { ...spec, density: spec.density * 0.4, hatChance: spec.hatChance * 0.5 }, 0, genre);
   return {
     genre,
     patterns: [a, a2, b, c],
@@ -227,6 +299,17 @@ export class Chiptune {
     g.gain.exponentialRampToValueAtTime(0.001, t0 + dur);
     osc.connect(g);
     g.connect(this.out);
+    // Vibrato expressif sur les notes tenues (s'installe après l'attaque).
+    if (dur > 0.45) {
+      const lfo = this.ctx.createOscillator();
+      lfo.frequency.value = 5.2;
+      const depth = this.ctx.createGain();
+      depth.gain.value = 14; // cents
+      lfo.connect(depth);
+      depth.connect(osc.detune);
+      lfo.start(t0 + 0.18);
+      lfo.stop(t0 + dur);
+    }
     osc.start(t0);
     osc.stop(t0 + dur + 0.02);
   }
@@ -276,13 +359,16 @@ export class Chiptune {
 
     const m = p.melody[i];
     if (m !== null) {
+      const held = Math.max(1, p.melLen[i]);
+      const dur = s.noteLen * held; // la tenue garde l'articulation du genre
       const f = s.rootHz * Math.pow(2, m / 12);
-      this.voice(s.melodyWave, f, t, s.noteLen, 0.5, drift);
-      if (s.melodyWave === "square") this.voice("square", f, t, s.noteLen, 0.2, drift + 8); // duty simulé
+      this.voice(s.melodyWave, f, t, dur, 0.5, drift);
+      if (s.melodyWave === "square") this.voice("square", f, t, dur, 0.2, drift + 8); // duty simulé
     }
     const h = p.harmony[i];
     if (h !== null) {
-      this.voice("square", s.rootHz * Math.pow(2, h / 12), t, s.noteLen * 1.2, 0.22, drift - 4);
+      const dur = s.noteLen * Math.max(1, p.melLen[i]) * 1.15;
+      this.voice("square", s.rootHz * Math.pow(2, h / 12), t, dur, 0.22, drift - 4);
     }
     const b = p.bass[i];
     if (b !== null) {
