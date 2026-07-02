@@ -19,9 +19,13 @@ export function hourKey(d: Date): string {
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}`;
 }
 
-/** Seed du programme : anniversaire de l'auditeur × heure d'écoute. */
+/**
+ * Seed du programme : anniversaire × instant précis de la mise sous tension
+ * (à la seconde). Chaque TUNE IN est une onde nouvelle — aucune ne revient.
+ */
 export function stationSeed(birthday: string, d: Date): string {
-  return `radio:${birthday}:${hourKey(d)}`;
+  const p = (n: number): string => String(n).padStart(2, "0");
+  return `radio:${birthday}:${hourKey(d)}:${p(d.getMinutes())}${p(d.getSeconds())}`;
 }
 
 /** Fréquence FM personnelle, dérivée de la date de naissance. */

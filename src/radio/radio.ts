@@ -15,11 +15,15 @@ const state = {
   trackTimer: 0,
   hourTimer: 0,
   voice: localStorage.getItem("radio-voice") !== "off",
+  /** Instant de la mise sous tension — sel de l'onde (jamais deux fois la même). */
+  tunedAt: new Date(),
 };
 
 function currentProgram(): { seed: string; ambiance: ReturnType<typeof ambianceForHour> } {
-  const now = new Date();
-  return { seed: stationSeed(state.birthday, now), ambiance: ambianceForHour(now.getHours()) };
+  return {
+    seed: stationSeed(state.birthday, state.tunedAt),
+    ambiance: ambianceForHour(new Date().getHours()),
+  };
 }
 
 /** Durée d'un morceau : deux passages complets de la structure. */
@@ -65,7 +69,10 @@ function playTrack(track: number): void {
 function scheduleHourChange(): void {
   clearTimeout(state.hourTimer);
   state.hourTimer = window.setTimeout(() => {
-    if (state.playing) playTrack(0); // nouvelle heure → nouveau programme
+    if (state.playing) {
+      state.tunedAt = new Date(); // nouvelle heure → nouvelle onde
+      playTrack(0);
+    }
     scheduleHourChange();
   }, msUntilNextHour(new Date()) + 500);
 }
@@ -77,6 +84,7 @@ function tuneIn(): void {
     return;
   }
   state.birthday = input.value;
+  state.tunedAt = new Date();
   localStorage.setItem("radio-birthday", state.birthday);
   $("freq").innerHTML = `${frequencyFor(state.birthday)} <small>MHz</small>`;
   state.playing = true;

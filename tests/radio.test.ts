@@ -1,15 +1,20 @@
 import { ambianceForHour, announcementFor, frequencyFor, hourKey, msUntilNextHour, stationSeed } from "../src/radio/logic";
 
 describe("Radio Robotariis — logique de station", () => {
-  test("même anniversaire + même heure → même seed (onde partagée)", () => {
+  test("même anniversaire + même instant exact → même onde", () => {
     const d = new Date(2026, 6, 2, 21, 12, 33);
-    expect(stationSeed("1980-03-14", d)).toBe(stationSeed("1980-03-14", new Date(2026, 6, 2, 21, 59, 59)));
+    expect(stationSeed("1980-03-14", d)).toBe(stationSeed("1980-03-14", new Date(2026, 6, 2, 21, 12, 33)));
   });
 
-  test("l'onde change à l'heure pile", () => {
-    const before = new Date(2026, 6, 2, 21, 59, 59);
-    const after = new Date(2026, 6, 2, 22, 0, 1);
-    expect(stationSeed("1980-03-14", before)).not.toBe(stationSeed("1980-03-14", after));
+  test("rallumer le poste une seconde plus tard → onde nouvelle (sel temporel)", () => {
+    const a = stationSeed("1980-03-14", new Date(2026, 6, 2, 21, 12, 33));
+    const b = stationSeed("1980-03-14", new Date(2026, 6, 2, 21, 12, 34));
+    expect(a).not.toBe(b);
+  });
+
+  test("deux anniversaires au même instant → deux ondes", () => {
+    const d = new Date(2026, 6, 2, 21, 12, 33);
+    expect(stationSeed("1980-03-14", d)).not.toBe(stationSeed("1993-11-02", d));
   });
 
   test("deux anniversaires → deux fréquences (et dans la bande FM)", () => {

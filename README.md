@@ -11,9 +11,9 @@
 chiptune et exports dans le navigateur (mode libre ; le lien Atlas ⇄ est réservé à l'app desktop).
 
 **📻 [Radio Robotariis](https://obareau.github.io/terra-incognita/radio/)** — jukebox chiptune généré
-à la volée : votre date de naissance × l'heure d'écoute = votre fréquence personnelle. La grille des
-programmes suit l'heure (marches le matin, blues clandestin le soir, requiems la nuit) et l'onde
-change à l'heure pile. Même date + même heure = même musique, partout.
+à la volée, avec speakerine en synthèse vocale : votre date de naissance × l'instant où vous allumez
+le poste = votre onde personnelle. La grille des programmes suit l'heure (marches le matin, blues
+clandestin le soir, requiems la nuit) — et chaque onde ne s'entend qu'une seule fois dans une vie.
 
 Terra-Incognita génère des cartes **entièrement procédurales** à trois échelles, dans une esthétique
 Game Boy / écran radar : tiles pixel art 16×16 **dessinés par le code** (zéro asset externe),
