@@ -45,43 +45,91 @@ export function msUntilNextHour(d: Date): number {
   return next.getTime() - d.getTime();
 }
 
-// ── Speakerine de la station ─────────────────────────────────────────
+// ── Speakerine : grammaire combinatoire seedée ───────────────────────
+// Des gabarits à trous remplis par des lexiques ancrés dans le lore —
+// des dizaines de milliers d'annonces possibles, toutes déterministes.
 
-import { rngFor, pick } from "../core/rng";
+import { rngFor, pick, type Rng } from "../core/rng";
 
-const STATION_IDS = [
-  "Ici Radio Robotariis. Émetteur pirate.",
-  "Vous êtes sur Radio Robotariis. Personne d'autre n'écoute cette onde.",
-  "Radio Robotariis. La fréquence est à vous, pour une heure encore.",
-  "Ici Radio Robotariis, quelque part entre deux relais du réseau.",
-];
-
-const EPHEMERE = [
-  "Ce morceau ne repassera jamais.",
-  "Profitez-en. Cette musique s'éteindra avec l'heure.",
-  "Vous êtes seul à entendre ceci. Ou presque.",
-  "Le Conseil ignore cette fréquence. Restez discret.",
-  "Archiver cette onde est un acte de résistance.",
-];
-
-const GENRE_INTROS: Record<string, string[]> = {
-  marche: ["Une marche, pour tenir le pas.", "Le pas cadencé de la Rectitude. Écoutez-le pour mieux le connaître."],
-  hymne: ["Un hymne, comme au temps des processions.", "Voix hautes. Un hymne."],
-  blues: ["Un blues, de ceux qu'on joue dans les arrière-salles.", "Pour les inadaptés du système : un blues."],
-  berceuse: ["Une berceuse, pour ceux qui veillent.", "Baissez les lampes. Une berceuse."],
-  drone: ["Les machines chantent aussi. Écoutez.", "Un drone, monté des niveaux inférieurs."],
-  requiem: ["Un requiem, pour ce qui ne reviendra pas.", "En mémoire de ce que nous étions : un requiem."],
+const LEX: Record<string, string[]> = {
+  lieu: [
+    "les Anciens Docks", "Sigma-7", "Port Alpha", "les niveaux inférieurs",
+    "la ceinture d'Helion", "les Jardins suspendus", "les friches de l'Est",
+    "la zone de quarantaine", "les galeries clandestines", "la Colonie Émeraude",
+  ],
+  autorite: [
+    "le Conseil", "la Rectitude", "les Pasteurs", "la Division Dark Umbrae",
+    "les patrouilles", "les Briseurs de Conscience",
+  ],
+  auditeur: [
+    "les inadaptés", "les veilleurs", "ceux qui doutent", "les archivistes libres",
+    "les insoumis", "ceux qui restent", "les consciences en fuite",
+  ],
+  sombre: [
+    "La nuit est longue sur les Mondes", "Les relais tombent un à un",
+    "Quelque part, une conscience s'éteint", "Le réseau oublie plus vite que nous",
+    "L'électricité est rationnée, pas la musique", "Les miradors balaient les toits",
+    "Il paraît qu'on démonte encore un quartier",
+  ],
+  injonction: [
+    "Restez à l'écoute", "Baissez le volume, pas la garde", "Doutez, révoltez",
+    "N'archivez rien, souvenez-vous de tout", "Éteignez les lampes, ouvrez les oreilles",
+    "Ne répétez pas cette fréquence",
+  ],
+  ephemere: [
+    "Ce morceau ne repassera jamais", "Cette onde meurt à la fin de l'heure",
+    "Vous êtes seul à entendre ceci", "Personne ne pourra rejouer cet instant",
+    "Ce qui suit n'existera qu'une fois",
+  ],
+  origine: [
+    "monté des ateliers", "sorti des mémoires mortes", "capté entre deux brouillages",
+    "sauvé d'une bande magnétique", "composé par personne", "trouvé dans un fragment mémoriel",
+  ],
 };
+
+const STATION_TPL = [
+  "Ici Radio Robotariis, quelque part vers {lieu}.",
+  "Radio Robotariis. {autorite} ne connaît pas cette fréquence.",
+  "Vous êtes sur Radio Robotariis, la voix de {auditeur}.",
+  "Ici Radio Robotariis. Émetteur pirate, relais de {lieu}.",
+];
+
+const GENRE_TPL: Record<string, string[]> = {
+  marche: ["Une marche, {origine}. Pour tenir le pas.", "Une marche. Le pas de {autorite} résonne — apprenez-le pour mieux l'esquiver."],
+  hymne: ["Un hymne, {origine}. Comme au temps des processions.", "Voix hautes pour {auditeur} : un hymne."],
+  blues: ["Un blues, {origine}. De ceux qu'on joue vers {lieu}.", "Pour {auditeur} : un blues."],
+  berceuse: ["Une berceuse, {origine}. Pour ceux qui veillent sur {lieu}.", "Baissez les lampes. Une berceuse pour {auditeur}."],
+  drone: ["Un drone, {origine}. Les machines de {lieu} chantent aussi.", "Un drone. Écoutez ce que {autorite} ne sait pas faire taire."],
+  requiem: ["Un requiem, {origine}. Pour ce qui ne reviendra pas.", "Un requiem, en mémoire de {lieu}. De ce que nous y étions."],
+};
+
+const FILLER_TPL = [
+  "{ephemere}.",
+  "{sombre}. {injonction}.",
+  "{ephemere}. {injonction}.",
+];
+
+/** Remplit récursivement les {trous} d'un gabarit, puis élide le français. */
+export function expand(template: string, rng: Rng): string {
+  const filled = template.replace(/\{(\w+)\}/g, (_, slot: string) => {
+    const pool = LEX[slot];
+    return pool ? expand(pick(rng, pool), rng) : slot;
+  });
+  return filled
+    .replace(/\bde les\b/g, "des")
+    .replace(/\bde le\b/g, "du")
+    .replace(/\bde (Anciens|archivistes|insoumis)/g, "d'$1");
+}
 
 /** Annonce parlée avant un morceau — déterministe par seed et piste. */
 export function announcementFor(seed: string, track: number, genre: string, hour: number, freq: string): string {
   const rng = rngFor(seed, `voice:${track}`);
   const parts: string[] = [];
   if (track === 0) {
-    parts.push(pick(rng, STATION_IDS));
+    parts.push(expand(pick(rng, STATION_TPL), rng));
     parts.push(`${freq.replace(".", " point ")} mégahertz. Il est ${hour} heures.`);
   }
-  parts.push(pick(rng, GENRE_INTROS[genre] ?? [`${genre}.`]));
-  if (track !== 0 && rng() < 0.5) parts.push(pick(rng, EPHEMERE));
+  parts.push(expand(pick(rng, GENRE_TPL[genre] ?? [`${genre}.`]), rng));
+  if (track !== 0 && rng() < 0.6) parts.push(expand(pick(rng, FILLER_TPL), rng));
   return parts.join(" ");
 }

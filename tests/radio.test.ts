@@ -59,4 +59,23 @@ describe("speakerine — annonces", () => {
     expect(a).not.toContain("heures");
     expect(a.toLowerCase()).toContain("requiem");
   });
+
+  test("grammaire combinatoire : 40 ondes → au moins 30 annonces distinctes", () => {
+    const seen = new Set<string>();
+    for (let i = 0; i < 40; i++) {
+      seen.add(announcementFor(`radio:x:onde-${i}`, 1, "blues", 21, "103.3"));
+    }
+    expect(seen.size).toBeGreaterThanOrEqual(30);
+  });
+
+  test("tous les trous des gabarits sont remplis (aucune {accolade} ne fuit)", () => {
+    for (const genre of ["marche", "hymne", "blues", "berceuse", "drone", "requiem"]) {
+      for (let i = 0; i < 20; i++) {
+        for (const track of [0, 1]) {
+          const a = announcementFor(`radio:g:${i}`, track, genre, 12, "99.9");
+          expect(a).not.toMatch(/[{}]/);
+        }
+      }
+    }
+  });
 });
