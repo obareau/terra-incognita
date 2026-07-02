@@ -7,6 +7,9 @@
 ![Platform](https://img.shields.io/badge/platform-Electron%20%7C%20Linux%20|%20Windows%20|%20macOS-blueviolet)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
+**▶ [Démo web jouable](https://obareau.github.io/terra-incognita/)** — génération, vues pixel/ASCII,
+chiptune et exports dans le navigateur (mode libre ; le lien Atlas ⇄ est réservé à l'app desktop).
+
 Terra-Incognita génère des cartes **entièrement procédurales** à trois échelles, dans une esthétique
 Game Boy / écran radar : tiles pixel art 16×16 **dessinés par le code** (zéro asset externe),
 macros « Lego » (caserne C.G.U., checkpoint, marché noir…), vue ASCII/TUI, chiptune génératif,
