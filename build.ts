@@ -59,7 +59,21 @@ async function main(): Promise<void> {
     platform: "browser",
     format: "iife",
   });
-  fs.copyFileSync("src/radio/index.html", "dist-web/radio/index.html");
+  // Le descriptif affiche le nombre de lignes réel : page radio + moteur.
+  const radioSources = [
+    "src/radio/radio.ts",
+    "src/radio/logic.ts",
+    "src/radio/voice.ts",
+    "src/radio/index.html",
+    "src/renderer/chiptune.ts",
+    "src/core/rng.ts",
+  ];
+  const loc = radioSources.reduce(
+    (sum, f) => sum + fs.readFileSync(f, "utf-8").split("\n").filter((l) => l.trim().length > 0).length,
+    0,
+  );
+  const radioHtml = fs.readFileSync("src/radio/index.html", "utf-8").replace("{{RADIO_LOC}}", String(loc));
+  fs.writeFileSync("dist-web/radio/index.html", radioHtml);
 }
 
 main().catch((e) => {
