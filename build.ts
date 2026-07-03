@@ -74,6 +74,7 @@ async function main(): Promise<void> {
   );
   const radioHtml = fs.readFileSync("src/radio/index.html", "utf-8").replace("{{RADIO_LOC}}", String(loc));
   fs.writeFileSync("dist-web/radio/index.html", radioHtml);
+
 }
 
 main().catch((e) => {
