@@ -340,6 +340,7 @@ $("btnAudio").addEventListener("click", () => {
     chiptune.stop();
     $("btnAudio").textContent = "▶ CHIPTUNE";
   } else if (state.map) {
+    chiptune.unlock(); // mobile : dans le geste
     chiptune.start(state.map.seed, state.map.params.ambiance);
     $("btnAudio").textContent = "■ STOP";
   }

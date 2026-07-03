@@ -103,9 +103,25 @@ function tuneOut(): void {
   updateScreen();
 }
 
-$("btnTune").addEventListener("click", () => (state.playing ? tuneOut() : tuneIn()));
+$("btnTune").addEventListener("click", () => {
+  if (state.playing) {
+    tuneOut();
+  } else {
+    chiptune.unlock(); // mobile : déverrouiller l'audio DANS le tap
+    tuneIn();
+  }
+});
 $("btnSkip").addEventListener("click", () => {
-  if (state.playing) playTrack((chiptune.track + 1) % TRACKS_PER_MAP);
+  if (state.playing) {
+    chiptune.unlock();
+    playTrack((chiptune.track + 1) % TRACKS_PER_MAP);
+  }
+});
+
+// Écran verrouillé / onglet en arrière-plan : l'AudioContext se suspend
+// sur mobile — on le réveille au retour.
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden && state.playing) chiptune.unlock();
 });
 $("btnVoice").addEventListener("click", () => {
   state.voice = !state.voice;

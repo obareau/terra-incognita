@@ -267,6 +267,22 @@ export class Chiptune {
     return this.timer !== null;
   }
 
+  /**
+   * À appeler DANS le geste utilisateur (tap/clic) : crée et réveille
+   * l'AudioContext, et joue un buffer muet — sans quoi les navigateurs
+   * mobiles laissent la sortie audio verrouillée si la musique démarre
+   * plus tard (ex. après une annonce de la speakerine).
+   */
+  unlock(): void {
+    this.ctx = this.ctx ?? new AudioContext();
+    void this.ctx.resume();
+    const b = this.ctx.createBuffer(1, 1, 22050);
+    const src = this.ctx.createBufferSource();
+    src.buffer = b;
+    src.connect(this.ctx.destination);
+    src.start(0);
+  }
+
   /** Nom affichable du morceau courant. */
   get trackLabel(): string {
     const genre = this.song?.genre ?? PLAYLISTS[this.ambiance][this.track % TRACKS_PER_MAP];
