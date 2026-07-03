@@ -61,6 +61,7 @@
 - **GitHub Pages `deploy-pages` échoue par intermittence** (« Deployment failed, try again later ») : trois occurrences le 2026-07-02 — un simple re-run suffit. Les scripts de vérification post-push font maintenant un rerun automatique.
 - **Grammaire française** : les gabarits à trous produisent « de les Briseurs » → élision en post-traitement dans `expand()`.
 - **Vérifier un déploiement en greppant le bundle minifié** : esbuild `--production` échappe les non-ASCII (`é` → `\xE9`) et renomme les identifiants — grepper un nom de fonction ou une chaîne accentuée renvoie 0 à tort. Utiliser un fragment de chaîne **ASCII pur** (ex. `quences mortes`).
+- **Mobile : AudioContext verrouillé hors geste utilisateur** (2026-07-03) : la speakerine parlait (speechSynthesis appelée dans le tap) mais la musique, démarrée au callback de fin de voix, restait muette sur iOS/Android. Fix : `chiptune.unlock()` (création + resume + buffer muet) appelé DANS les handlers de tap, + réveil sur `visibilitychange`. Les hats étaient aussi mangés par le lowpass cassette 2400 Hz → percussions routées sur le master.
 
 ## 2026-07-02 — Lien Atlas bidirectionnel (v0.2.0), suite
 
