@@ -74,6 +74,8 @@ async function main(): Promise<void> {
   );
   const radioHtml = fs.readFileSync("src/radio/index.html", "utf-8").replace("{{RADIO_LOC}}", String(loc));
   fs.writeFileSync("dist-web/radio/index.html", radioHtml);
+  // Interventions pirates (Nova 7 / Renégats) — une onde clandestine coupe l'émission.
+  fs.copyFileSync("src/renderer/pirate.js", "dist-web/radio/pirate.js");
 
 }
 
