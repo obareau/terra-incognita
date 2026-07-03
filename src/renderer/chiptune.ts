@@ -36,6 +36,7 @@ interface Pattern {
   melLen: number[];
   harmony: (number | null)[];
   bass: (number | null)[];
+  bassLen: number[];
   drums: Drum[];
 }
 
@@ -76,6 +77,8 @@ interface Song {
   noteLen: number;
 }
 
+type BassStyle = "ostinato" | "walking" | "held" | "pulse";
+
 interface GenreSpec {
   tempo: [number, number];
   density: number;      // probabilité de note mélodique par pas
@@ -83,26 +86,28 @@ interface GenreSpec {
   swing: number;
   level: number;
   melodyWave: OscillatorType;
-  kickEvery: number;    // 0 = pas de kick
-  snare: boolean;
-  hatChance: number;
+  /** Groove sur 16 pas : K=kick, S=snare, h=hat, x=hat possible, .=silence. */
+  groove: string;
+  /** Roulement de caisse claire en fin de phrase (proba). */
+  fillChance: number;
+  hatChance: number;    // proba qu'un 'x' devienne un hat
   harmony: boolean;     // seconde voix
   /** Intervalles possibles de la seconde voix (demi-tons). */
   harmonyIv: [number, number];
-  bassEvery: number;
+  bassStyle: BassStyle;
   /** true → mélodie à tendance descendante (lamento). */
   descend?: boolean;
 }
 
 const GENRES: Record<Genre, GenreSpec> = {
-  marche: { tempo: [96, 116], density: 0.8, noteLen: 0.1, swing: 0, level: 0.17, melodyWave: "square", kickEvery: 4, snare: true, hatChance: 0.6, harmony: false, harmonyIv: [7, 4], bassEvery: 2 },
-  hymne: { tempo: [58, 70], density: 0.55, noteLen: 0.5, swing: 0, level: 0.15, melodyWave: "square", kickEvery: 8, snare: false, hatChance: 0.1, harmony: true, harmonyIv: [7, 4], bassEvery: 4 },
-  blues: { tempo: [78, 92], density: 0.6, noteLen: 0.2, swing: 0.28, level: 0.16, melodyWave: "square", kickEvery: 4, snare: false, hatChance: 0.7, harmony: false, harmonyIv: [7, 4], bassEvery: 2 },
-  berceuse: { tempo: [64, 76], density: 0.45, noteLen: 0.34, swing: 0.1, level: 0.13, melodyWave: "triangle", kickEvery: 0, snare: false, hatChance: 0.15, harmony: true, harmonyIv: [7, 4], bassEvery: 4 },
-  drone: { tempo: [66, 74], density: 0.25, noteLen: 0.9, swing: 0, level: 0.15, melodyWave: "sawtooth", kickEvery: 8, snare: false, hatChance: 0.25, harmony: false, harmonyIv: [7, 4], bassEvery: 8 },
-  // Requiem : lamento descendant au triangle, glas grave tous les 16 pas,
+  marche: { tempo: [96, 116], density: 0.8, noteLen: 0.1, swing: 0, level: 0.17, melodyWave: "square", groove: "K.xhS.xhK.xhS.xh", fillChance: 0.6, hatChance: 0.6, harmony: false, harmonyIv: [7, 4], bassStyle: "ostinato" },
+  hymne: { tempo: [58, 70], density: 0.55, noteLen: 0.5, swing: 0, level: 0.15, melodyWave: "square", groove: "K.......S.......", fillChance: 0.15, hatChance: 0.1, harmony: true, harmonyIv: [7, 4], bassStyle: "held" },
+  blues: { tempo: [78, 92], density: 0.6, noteLen: 0.2, swing: 0.28, level: 0.16, melodyWave: "square", groove: "K.h.S.hxK.h.S.hx", fillChance: 0.4, hatChance: 0.7, harmony: false, harmonyIv: [7, 4], bassStyle: "walking" },
+  berceuse: { tempo: [64, 76], density: 0.45, noteLen: 0.34, swing: 0.1, level: 0.13, melodyWave: "triangle", groove: "....x.......x...", fillChance: 0, hatChance: 0.5, harmony: true, harmonyIv: [7, 4], bassStyle: "held" },
+  drone: { tempo: [66, 74], density: 0.25, noteLen: 0.9, swing: 0, level: 0.15, melodyWave: "sawtooth", groove: "K.......x...x...", fillChance: 0, hatChance: 0.4, harmony: false, harmonyIv: [7, 4], bassStyle: "held" },
+  // Requiem : lamento descendant au triangle, glas grave en ouverture,
   // cloche haute (quinte + octave) en écho — lent et mélancolique.
-  requiem: { tempo: [46, 56], density: 0.5, noteLen: 0.9, swing: 0, level: 0.13, melodyWave: "triangle", kickEvery: 16, snare: false, hatChance: 0.04, harmony: true, harmonyIv: [3, 19], bassEvery: 8, descend: true },
+  requiem: { tempo: [46, 56], density: 0.5, noteLen: 0.9, swing: 0, level: 0.13, melodyWave: "triangle", groove: "K...............", fillChance: 0, hatChance: 0.1, harmony: true, harmonyIv: [3, 19], bassStyle: "held", descend: true },
 };
 
 /** Note d'accord (fondamentale/tierce/quinte) la plus proche — ancrage harmonique. */
@@ -162,6 +167,7 @@ function buildPattern(rng: Rng, scale: number[], spec: GenreSpec, transpose: num
     melLen: new Array<number>(STEPS).fill(0),
     harmony: new Array<number | null>(STEPS).fill(null),
     bass: new Array<number | null>(STEPS).fill(null),
+    bassLen: new Array<number>(STEPS).fill(0),
     drums: new Array<Drum>(STEPS).fill(null),
   };
   const prog = pick(rng, PROGRESSIONS[genre]);
@@ -171,18 +177,51 @@ function buildPattern(rng: Rng, scale: number[], spec: GenreSpec, transpose: num
   writeMeasure(rng, p, scale, spec, transpose, 2, prog[2], pick(rng, RHYTHMS), null, false);
   writeMeasure(rng, p, scale, spec, transpose, 3, prog[3], pick(rng, [[2, 2], [1, 1, 2], [4]]), null, true);
 
-  for (let i = 0; i < STEPS; i++) {
-    // Basse : fondamentale de l'accord de la mesure, quinte en relance.
-    if (spec.bassEvery > 0 && i % spec.bassEvery === 0) {
-      const chord = prog[Math.floor(i / 4)];
-      const fifth = i % 4 === 2 && chance(rng, 0.5);
-      p.bass[i] = degTone(scale, fifth ? chord + 4 : chord) + transpose;
+  // ── Ligne de basse : un style par genre ────────────────────────────
+  const putBass = (i: number, deg: number, len: number): void => {
+    p.bass[i] = degTone(scale, deg) + transpose;
+    p.bassLen[i] = len;
+  };
+  for (let bar = 0; bar < 4; bar++) {
+    const chord = prog[bar];
+    const next = prog[(bar + 1) % 4];
+    const b0 = bar * 4;
+    switch (spec.bassStyle) {
+      case "ostinato": // martial : fondamentale-fondamentale-quinte-octave
+        putBass(b0, chord, 1);
+        putBass(b0 + 1, chord, 1);
+        putBass(b0 + 2, chord + 4, 1);
+        putBass(b0 + 3, chance(rng, 0.5) ? chord + 7 : chord, 1);
+        break;
+      case "walking": { // blues : accord arpégé + approche chromatique du suivant
+        putBass(b0, chord, 1);
+        putBass(b0 + 1, chord + 2, 1);
+        putBass(b0 + 2, chord + 4, 1);
+        // Note d'approche : un degré au-dessus/dessous de la cible.
+        putBass(b0 + 3, next + (chance(rng, 0.5) ? 1 : -1), 1);
+        break;
+      }
+      case "pulse": // noire répétée
+        for (let k = 0; k < 4; k++) putBass(b0 + k, chord, 1);
+        break;
+      case "held": // tenue sur la mesure — respiration des genres lents
+        putBass(b0, chord, 4);
+        if (chance(rng, 0.35)) putBass(b0 + 3, chord + 4, 1); // relance à la quinte
+        break;
     }
-    let d: Drum = null;
-    if (spec.kickEvery > 0 && i % spec.kickEvery === 0) d = "kick";
-    else if (spec.snare && i % 8 === 4) d = "snare";
-    else if (chance(rng, spec.hatChance)) d = "hat";
-    p.drums[i] = d;
+  }
+
+  // ── Batterie : groove écrit + variations, fill de fin de phrase ────
+  for (let i = 0; i < STEPS; i++) {
+    const c = spec.groove[i];
+    if (c === "K") p.drums[i] = "kick";
+    else if (c === "S") p.drums[i] = "snare";
+    else if (c === "h") p.drums[i] = "hat";
+    else if (c === "x" && chance(rng, spec.hatChance)) p.drums[i] = "hat";
+  }
+  if (chance(rng, spec.fillChance)) {
+    // Roulement sur les 3 derniers pas — annonce la phrase suivante.
+    for (const i of [13, 14, 15]) p.drums[i] = chance(rng, 0.8) ? "snare" : "hat";
   }
   return p;
 }
@@ -315,31 +354,53 @@ export class Chiptune {
   }
 
   private drum(kind: Exclude<Drum, null>, t: number): void {
-    if (!this.ctx || !this.out || !this.noiseBuf) return;
+    if (!this.ctx || !this.master || !this.noiseBuf) return;
+    if (kind === "kick") {
+      // Grosse caisse synthétisée : sinus à chute de hauteur — du punch.
+      const osc = this.ctx.createOscillator();
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(150, t);
+      osc.frequency.exponentialRampToValueAtTime(42, t + 0.11);
+      const g = this.ctx.createGain();
+      g.gain.setValueAtTime(1.1, t);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 0.16);
+      osc.connect(g);
+      g.connect(this.master!);
+      osc.start(t);
+      osc.stop(t + 0.18);
+      return;
+    }
     const src = this.ctx.createBufferSource();
     src.buffer = this.noiseBuf;
     const g = this.ctx.createGain();
     const f = this.ctx.createBiquadFilter();
-    if (kind === "kick") {
-      f.type = "lowpass";
-      f.frequency.value = 200;
-      g.gain.setValueAtTime(0.9, t);
-      g.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
-    } else if (kind === "snare") {
+    if (kind === "snare") {
       f.type = "bandpass";
-      f.frequency.value = 1800;
-      f.Q.value = 0.8;
-      g.gain.setValueAtTime(0.55, t);
-      g.gain.exponentialRampToValueAtTime(0.001, t + 0.09);
+      f.frequency.value = 1900;
+      f.Q.value = 0.7;
+      g.gain.setValueAtTime(0.7, t);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
+      // Corps de la caisse : un coup de tom court sous le souffle.
+      const body = this.ctx.createOscillator();
+      body.type = "triangle";
+      body.frequency.setValueAtTime(210, t);
+      body.frequency.exponentialRampToValueAtTime(140, t + 0.06);
+      const bg = this.ctx.createGain();
+      bg.gain.setValueAtTime(0.4, t);
+      bg.gain.exponentialRampToValueAtTime(0.001, t + 0.07);
+      body.connect(bg);
+      bg.connect(this.master!);
+      body.start(t);
+      body.stop(t + 0.08);
     } else {
       f.type = "highpass";
-      f.frequency.value = 5000;
-      g.gain.setValueAtTime(0.25, t);
+      f.frequency.value = 5500;
+      g.gain.setValueAtTime(0.28, t);
       g.gain.exponentialRampToValueAtTime(0.001, t + 0.04);
     }
     src.connect(f);
     f.connect(g);
-    g.connect(this.out);
+    g.connect(this.master!);
     src.start(t);
     src.stop(t + 0.15);
   }
@@ -372,10 +433,13 @@ export class Chiptune {
     }
     const b = p.bass[i];
     if (b !== null) {
-      const dur = s.genre === "drone" ? stepSec * 8 : 0.3;
-      this.voice("triangle", (s.rootHz / 2) * Math.pow(2, b / 12), t, dur, 0.8, drift / 2);
+      const held = Math.max(1, p.bassLen[i]);
+      const dur = s.genre === "drone" ? stepSec * 8 : Math.max(0.28, held * stepSec * 0.95);
+      const f = (s.rootHz / 2) * Math.pow(2, b / 12);
+      this.voice("triangle", f, t, dur, 0.95, drift / 2);
+      this.voice("square", f, t, Math.min(dur, 0.12), 0.18, drift / 2); // attaque perceptible
       if (s.genre === "drone") {
-        this.voice("sawtooth", (s.rootHz / 2) * Math.pow(2, b / 12), t, dur, 0.12, drift + 10);
+        this.voice("sawtooth", f, t, dur, 0.12, drift + 10);
       }
     }
     const d = p.drums[i];
