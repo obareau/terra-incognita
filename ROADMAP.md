@@ -6,7 +6,7 @@
 ## Vision
 
 - **Full procédural** : une seed et des paramètres (`cguDensity`, factions, ambiance, ruine) génèrent une carte complète.
-- **4 échelles** : planète/monde (climat) → région/continent (état-major) → ville/quartier (style Zelda GB) → intérieur/tactique (BSP). Descente d'échelle déterministe par `childSeed`.
+- **5 échelles** : système stellaire (rendu orbital) → planète/monde (rendu globe, climat) → région/continent (état-major) → ville/quartier (style Zelda GB) → intérieur/tactique (BSP). Descente d'échelle déterministe par `childSeed`.
 - **Tiles générés par le code** : pixel art 16×16, palette 4 tons (phosphore / sépia / blueprint). Zéro asset externe.
 - **Macros** : prefabs déclarés en ASCII (caserne C.G.U., checkpoint, bloc d'habitation…) posés comme des Lego.
 - **Rendus** : canvas pixel lofi, vue ASCII/TUI, chiptune génératif WebAudio.
@@ -34,16 +34,14 @@
 | 13 | **Jukebox chiptune** : 6 genres (marche, hymne, blues, berceuse, drone, requiem), 5 morceaux/carte, structure couplet/refrain | requiem validé par Olivier | ✅ 2026-07-02 |
 | 14 | **Radio Robotariis** (side project, /radio/) : onde unique par TUNE IN (anniversaire × instant, salée à la seconde), grille horaire, speakerine Web Speech, annonces par grammaire combinatoire lore, compteur de lignes auto | https://obareau.github.io/terra-incognita/radio/ | ✅ 2026-07-02 |
 | 15 | **Échelle planète + climat/météo par type** : 4ᵉ échelle au-dessus de région (planet.ts, carte du monde grossière, POI continent→région / avant-poste→intérieur direct) ; `PlanetType` (tellurique/océanique/glaciale/gazeuse) mirror du pattern `ArchStyle`, cascade sur région (seuils/tuiles/densité végétale/POI) et ville (arbres/parcs) ; nouvelle tuile `T.SNOW` ; routing Atlas `planete`→`planet` (`systeme` reste sur `region`, hors périmètre) | déterminisme testé par type, `tellurique` = comportement historique inchangé bit à bit, cascade climat visible en descendant continent→région | ✅ 2026-07-09 |
-| 16 | **Lisibilité (2e passe)** : toits industriels/murs métalliques relevés au ton 3 (fondaient dans l'herbe au ton 1 identique) ; mouchetis herbe/terre réduit (~40%, moins de bruit visuel) ; marqueurs POI (ville/base/ruine) fond opaque au lieu de transparent — restent lisibles sur n'importe quel terrain dessous | contraste bâti/sol net à distance de vue normale, POI visibles au premier coup d'œil | ✅ 2026-07-09 |
+| 16 | **Lisibilité (2e et 3e passes)** : toits industriels/murs métalliques relevés au ton 3 (fondaient dans l'herbe au ton 1 identique) ; mouchetis herbe/terre réduit (~40%) ; marqueurs POI fond opaque (au lieu de transparent) ; puis palettes étendues à 8 tons max (4 historiques inchangés + 4 nouveaux) et marqueurs POI passés au ton 7 pour rester distincts des bâtiments (ton 3) | contraste bâti/sol net, POI visibles au premier coup d'œil, distincts des bâtiments | ✅ 2026-07-09 |
+| 17 | **Système stellaire + vue globe planète** : rendu ORBITAL dédié (pas une grille de tuiles) pour l'échelle système — étoile(s) au centre (simple 70%/double 22%/triple 8%, nomenclature A/B/C), 3-7 planètes en orbite (chiffres romains, `planetType` individuel propagé via `poi.params`) ; échelle planète passée en rendu GLOBE (clip circulaire + ombrage de limbe simulant une sphère) au lieu d'une grille rectangulaire plate, sans toucher à la génération sous-jacente (climat/continents/POI inchangés) | déterminisme testé (étoiles+POI, pas de hash de calques — système n'a pas de grille), nomenclature vérifiée sur 200 seeds, vérifié visuellement (globe + système avec descente cliquable) | ✅ 2026-07-09 |
 
-**MVP = phases 0–2 — atteint. v0.3.0 : styles de faction, monuments, web + radio. v0.4 (en cours) : planète + climat.**
-68 tests jest verts. Chiptune : requiem validé à l'oreille ; les 5 autres genres restent à écouter.
+**MVP = phases 0–2 — atteint. v0.3.0 : styles de faction, monuments, web + radio. v0.4 (en cours) : planète + climat + système.**
+74 tests jest verts. Chiptune : requiem validé à l'oreille ; les 5 autres genres restent à écouter.
 
 ## Après v1 (idées)
 
-- **Échelle système** (au-dessus de planète) + étoiles doubles/triples et leur
-  nomenclature — explicitement hors périmètre de la phase 15, `systeme`
-  continue de router vers `region` sans changement pour l'instant.
 - WFC pour le remplissage organique des blocs de ville (v1.5)
 - Enrichissement par frontmatter du vault (`04-LIEUX/*.md` : population, contrôle)
 - Annotations manuelles légères (labels, flèches d'état-major)

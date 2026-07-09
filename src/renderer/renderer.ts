@@ -1,6 +1,6 @@
 // Orchestration de l'UI : état, contrôles, navigation d'échelles, Atlas.
 
-import type { Ambiance, AtlasState, GenParams, MapData, PaletteName, Scale, TerraApi } from "../shared/types";
+import type { Ambiance, AtlasState, GenParams, MapData, PaletteName, POI, Scale, TerraApi } from "../shared/types";
 import { DEFAULT_PARAMS, childScale, generate } from "../core/generate";
 import { fromJson, toAscii, toJson } from "../core/serialize";
 import { mapNodeToParams } from "../core/atlas/mapping";
@@ -9,6 +9,7 @@ import { PALETTES } from "../core/palettes";
 import { TILESET } from "../core/tiles/tileset";
 import { CanvasView } from "./canvasView";
 import { AsciiView } from "./asciiView";
+import { SystemView } from "./systemView";
 import { Chiptune } from "./chiptune";
 import { installBrowserShim } from "./shim";
 
@@ -43,7 +44,11 @@ const state = {
 const canvas = $<HTMLCanvasElement>("view");
 const pixelView = new CanvasView(canvas);
 const asciiView = new AsciiView(canvas);
+const systemView = new SystemView(canvas);
 const chiptune = new Chiptune();
+
+/** Échelle système : scène orbitale dédiée, pas le pipeline tuiles pixel/ascii. */
+const isSystemScale = (): boolean => state.map?.scale === "system";
 
 // ── Lecture des contrôles ────────────────────────────────────────────
 
@@ -79,16 +84,19 @@ function syncSliderLabels(): void {
 // Cadrage auto tant que l'utilisateur n'a pas pris la main (pan/zoom).
 let autoFit = true;
 
+let systemHighlight: POI | null = null;
+
 function resizeCanvas(): void {
   const box = $("viewport").getBoundingClientRect();
   canvas.width = Math.floor(box.width);
   canvas.height = Math.floor(box.height);
-  if (autoFit) pixelView.fit();
+  if (autoFit && !isSystemScale()) pixelView.fit();
   redraw();
 }
 
 function redraw(highlight?: { x: number; y: number } | null): void {
-  if (state.view === "pixel") pixelView.draw(highlight);
+  if (isSystemScale()) systemView.draw(systemHighlight);
+  else if (state.view === "pixel") pixelView.draw(highlight);
   else asciiView.draw(pixelView.camera);
 }
 
@@ -100,13 +108,20 @@ function applyPaletteToUi(): void {
 
 function setMap(map: MapData, label: string, pushCrumb: boolean): void {
   state.map = map;
+  systemHighlight = null;
   if (pushCrumb) {
     state.stack.push({ scale: map.scale, seed: map.seed, params: map.params, label });
   }
-  pixelView.setMap(map, state.palette);
-  asciiView.setMap(map, state.palette);
-  autoFit = true;
-  pixelView.fit();
+  if (map.scale === "system") {
+    // Scène orbitale : pas de pipeline tuiles (le canvas offscreen pixel/ascii
+    // n'a pas de sens ici — layers vides, w/h = un plan orbital, pas une grille).
+    systemView.setMap(map, state.palette);
+  } else {
+    pixelView.setMap(map, state.palette);
+    asciiView.setMap(map, state.palette);
+    autoFit = true;
+    pixelView.fit();
+  }
   updateBreadcrumb();
   redraw();
   if (chiptune.playing) {
@@ -134,11 +149,12 @@ function generateFromControls(): void {
   setMap(map, `${seed} [${scale}]`, true);
 }
 
-function descendTo(poiLabel: string, kind: string, childSeed: string): void {
+function descendTo(poi: POI): void {
   if (!state.map) return;
+  const { label: poiLabel, kind, childSeed } = poi;
   const next = childScale(state.map.scale, kind);
   if (!next) return;
-  const params = { ...state.map.params };
+  const params = { ...state.map.params, ...poi.params };
   if (kind === "base" || kind === "qg" || kind === "caserne" || kind === "avant-poste") {
     params.ambiance = "militaire";
     params.cguDensity = Math.max(params.cguDensity, 0.7);
@@ -257,14 +273,21 @@ canvas.addEventListener("mousemove", (e) => {
     const dx = e.clientX - last.x;
     const dy = e.clientY - last.y;
     if (Math.abs(dx) + Math.abs(dy) > 2) { moved = true; autoFit = false; }
-    pixelView.pan(dx, dy);
+    if (!isSystemScale()) pixelView.pan(dx, dy); // scène système fixe, pas de pan
     last = { x: e.clientX, y: e.clientY };
     redraw();
     return;
   }
   const rect = canvas.getBoundingClientRect();
-  const cell = pixelView.screenToCell(e.clientX - rect.left, e.clientY - rect.top);
   const info = $("cellInfo");
+  if (isSystemScale()) {
+    const poi = systemView.findPlanetAt(e.clientX - rect.left, e.clientY - rect.top);
+    systemHighlight = poi;
+    info.textContent = poi ? `${poi.label} ▸` : "";
+    redraw();
+    return;
+  }
+  const cell = pixelView.screenToCell(e.clientX - rect.left, e.clientY - rect.top);
   if (cell && state.map) {
     const i = cell.y * state.map.w + cell.x;
     const id = state.map.layers.overlay[i] || state.map.layers.structure[i] || state.map.layers.ground[i];
@@ -279,13 +302,19 @@ canvas.addEventListener("mousemove", (e) => {
 canvas.addEventListener("click", (e) => {
   if (moved || !state.map) return;
   const rect = canvas.getBoundingClientRect();
+  if (isSystemScale()) {
+    const poi = systemView.findPlanetAt(e.clientX - rect.left, e.clientY - rect.top);
+    if (poi) descendTo(poi);
+    return;
+  }
   const cell = pixelView.screenToCell(e.clientX - rect.left, e.clientY - rect.top);
   if (!cell) return;
   const poi = state.map.pois.find((p) => Math.abs(p.x - cell.x) <= 1 && Math.abs(p.y - cell.y) <= 1);
-  if (poi) descendTo(poi.label, poi.kind, poi.childSeed);
+  if (poi) descendTo(poi);
 });
 canvas.addEventListener("wheel", (e) => {
   e.preventDefault();
+  if (isSystemScale()) return; // scène système à échelle fixe, pas de zoom
   const rect = canvas.getBoundingClientRect();
   autoFit = false;
   pixelView.zoomAt(e.clientX - rect.left, e.clientY - rect.top, e.deltaY < 0 ? 1 : -1);
@@ -298,7 +327,7 @@ $("btnGenerate").addEventListener("click", generateFromControls);
 $("btnAtlasGen").addEventListener("click", generateFromAtlas);
 $("btnPublish").addEventListener("click", () => void publishToAtlas());
 $("btnUp").addEventListener("click", goUp);
-$("btnFit").addEventListener("click", () => { pixelView.fit(); redraw(); });
+$("btnFit").addEventListener("click", () => { if (!isSystemScale()) pixelView.fit(); redraw(); });
 
 $("btnRandomSeed").addEventListener("click", () => {
   // Seule source d'aléa non-seedée : le bouton dé, hors de src/core.
@@ -362,7 +391,7 @@ $("btnNextTrack").addEventListener("click", () => {
 });
 
 $("btnPng").addEventListener("click", () => {
-  const url = pixelView.toPngDataUrl();
+  const url = isSystemScale() ? systemView.toPngDataUrl() : pixelView.toPngDataUrl();
   if (url && state.map) void window.terra.export.savePng(`${state.map.seed}-${state.map.scale}.png`, url);
 });
 $("btnTxt").addEventListener("click", () => {
@@ -390,7 +419,7 @@ window.addEventListener("keydown", (e) => {
   if (e.target instanceof HTMLInputElement || e.target instanceof HTMLSelectElement) return;
   if (e.key === "r" || e.key === "R") generateFromControls();
   if (e.key === "v" || e.key === "V") $("btnView").click();
-  if (e.key === "f" || e.key === "F") { pixelView.fit(); redraw(); }
+  if (e.key === "f" || e.key === "F") { if (!isSystemScale()) pixelView.fit(); redraw(); }
   if (e.key === "Backspace") goUp();
 });
 

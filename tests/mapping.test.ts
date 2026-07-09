@@ -42,10 +42,10 @@ describe("mapping Atlas → GenParams", () => {
     expect(mapped.scale).toBe("planet");
   });
 
-  test("système → échelle région (hors périmètre, inchangé)", () => {
+  test("système → échelle système", () => {
     const node: AtlasNode = { id: "sigma", label: "Sigma", category: "systeme", tags: [] };
     const mapped = mapNodeToParams(node, makeGraph([node], []));
-    expect(mapped.scale).toBe("region");
+    expect(mapped.scale).toBe("system");
   });
 
   test("planète taguée glace → planetType glaciale", () => {

@@ -114,13 +114,46 @@ export class CanvasView {
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     if (!this.offscreen || !this.map) return;
     const { x, y, zoom } = this.camera;
+    const isGlobe = this.map.scale === "planet";
+    const globe = isGlobe ? this.globeBounds() : null;
+
     ctx.save();
+    if (globe) {
+      ctx.beginPath();
+      ctx.arc(globe.cx, globe.cy, globe.r, 0, Math.PI * 2);
+      ctx.clip();
+    }
     ctx.scale(zoom, zoom);
     ctx.drawImage(this.offscreen, -x, -y);
     ctx.restore();
 
+    if (globe) {
+      // Ombrage sphérique (limbe assombri) — donne l'illusion d'un globe
+      // plutôt qu'une carte plate découpée en rond.
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(globe.cx, globe.cy, globe.r, 0, Math.PI * 2);
+      ctx.clip();
+      const shade = ctx.createRadialGradient(
+        globe.cx - globe.r * 0.3, globe.cy - globe.r * 0.3, globe.r * 0.2,
+        globe.cx, globe.cy, globe.r * 1.05,
+      );
+      shade.addColorStop(0, "rgba(0,0,0,0)");
+      shade.addColorStop(0.7, "rgba(0,0,0,0)");
+      shade.addColorStop(1, "rgba(0,0,0,0.55)");
+      ctx.fillStyle = shade;
+      ctx.fillRect(globe.cx - globe.r, globe.cy - globe.r, globe.r * 2, globe.r * 2);
+      ctx.restore();
+      ctx.strokeStyle = "rgba(255,255,255,0.25)";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.arc(globe.cx, globe.cy, globe.r, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
     // Halo sur les POI navigables.
     ctx.save();
+    if (globe) { ctx.beginPath(); ctx.arc(globe.cx, globe.cy, globe.r, 0, Math.PI * 2); ctx.clip(); }
     ctx.strokeStyle = "rgba(255,255,255,0.85)";
     ctx.lineWidth = 1;
     for (const poi of this.map.pois) {
@@ -136,6 +169,17 @@ export class CanvasView {
       ctx.strokeRect(sx, sy, TILE_PX * zoom, TILE_PX * zoom);
     }
     ctx.restore();
+  }
+
+  /** Cercle inscrit dans la zone visible de la carte (vue "globe" planète). */
+  private globeBounds(): { cx: number; cy: number; r: number } {
+    const { x, y, zoom } = this.camera;
+    const mapScreenW = this.map!.w * TILE_PX * zoom;
+    const mapScreenH = this.map!.h * TILE_PX * zoom;
+    const left = -x * zoom;
+    const top = -y * zoom;
+    const r = Math.min(mapScreenW, mapScreenH) / 2;
+    return { cx: left + mapScreenW / 2, cy: top + mapScreenH / 2, r };
   }
 
   screenToCell(px: number, py: number): { x: number; y: number } | null {

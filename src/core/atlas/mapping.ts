@@ -76,7 +76,7 @@ export function mapNodeToParams(node: AtlasNode, graph: AtlasGraph): MappedNode 
   // ── Échelle suggérée ───────────────────────────────────────────────
   let scale: Scale = "city";
   if (node.category === "planete") scale = "planet";
-  else if (node.category === "systeme") scale = "region"; // hors périmètre — inchangé
+  else if (node.category === "systeme") scale = "system";
   else if (has("station-orbitale") || has("bunker") || has("interieur")) scale = "interior";
 
   // ── Type de planète, déduit des tags (uniquement pertinent si planet) ──

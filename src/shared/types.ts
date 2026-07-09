@@ -1,6 +1,6 @@
 // Types partagés entre main, preload, renderer et core.
 
-export type Scale = "planet" | "region" | "city" | "interior";
+export type Scale = "system" | "planet" | "region" | "city" | "interior";
 
 export type Ambiance =
   | "militaire"    // zone C.G.U. verrouillée
@@ -35,6 +35,8 @@ export interface POI {
   label: string;
   /** Seed dérivée pour générer la carte enfant (descente d'échelle). */
   childSeed: string;
+  /** Surcharge de params pour la carte enfant (ex. planetType d'une planète de système). */
+  params?: Partial<GenParams>;
 }
 
 export interface MapLayers {
@@ -48,6 +50,14 @@ export interface AtlasRef {
   label: string;
 }
 
+/** Étoile d'un système (échelle "system") — 1 à 3 (simple/double/triple). */
+export interface StarInfo {
+  name: string;
+  /** Type spectral simplifié — pilote couleur/taille du rendu orbital. */
+  spectralType: "naine-rouge" | "jaune" | "blanche" | "geante-bleue";
+  radiusPx: number;
+}
+
 export interface MapData {
   version: 1;
   scale: Scale;
@@ -58,6 +68,8 @@ export interface MapData {
   layers: MapLayers;
   pois: POI[];
   atlasRef?: AtlasRef;
+  /** Uniquement pour scale==="system" — rendu orbital dédié (systemView.ts). */
+  stars?: StarInfo[];
 }
 
 // ── Atlas ────────────────────────────────────────────────────────────

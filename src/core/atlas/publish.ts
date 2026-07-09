@@ -70,6 +70,7 @@ export function upsertMarker(notes: string, marker: string): string {
 
 /** Genres de POI qui méritent une fiche Atlas, par échelle. */
 const PUBLISHABLE: Record<Scale, string[]> = {
+  system: ["planete"],
   planet: ["continent", "avant-poste"],
   region: ["city", "base", "ruin", "mystere"],
   city: ["qg", "caserne", "marche", "usine", "memorial"],
@@ -77,6 +78,7 @@ const PUBLISHABLE: Record<Scale, string[]> = {
 };
 
 const KIND_LABEL: Record<string, string> = {
+  planete: "Planète",
   continent: "Continent",
   "avant-poste": "Avant-poste",
   city: "Ville",

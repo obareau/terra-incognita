@@ -13,6 +13,7 @@ interface MapJson {
   layers: { ground: number[]; structure: number[]; overlay: number[] };
   pois: MapData["pois"];
   atlasRef?: MapData["atlasRef"];
+  stars?: MapData["stars"];
 }
 
 export function toJson(map: MapData): string {
@@ -30,6 +31,7 @@ export function toJson(map: MapData): string {
     },
     pois: map.pois,
     atlasRef: map.atlasRef,
+    stars: map.stars,
   };
   return JSON.stringify(out);
 }
@@ -55,6 +57,7 @@ export function fromJson(json: string): MapData {
     },
     pois: raw.pois,
     atlasRef: raw.atlasRef,
+    stars: raw.stars,
   };
 }
 
