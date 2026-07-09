@@ -14,6 +14,7 @@ interface MapJson {
   pois: MapData["pois"];
   atlasRef?: MapData["atlasRef"];
   stars?: MapData["stars"];
+  weather?: MapData["weather"];
 }
 
 export function toJson(map: MapData): string {
@@ -32,6 +33,7 @@ export function toJson(map: MapData): string {
     pois: map.pois,
     atlasRef: map.atlasRef,
     stars: map.stars,
+    weather: map.weather,
   };
   return JSON.stringify(out);
 }
@@ -58,6 +60,7 @@ export function fromJson(json: string): MapData {
     pois: raw.pois,
     atlasRef: raw.atlasRef,
     stars: raw.stars,
+    weather: raw.weather,
   };
 }
 

@@ -58,6 +58,15 @@ export interface StarInfo {
   radiusPx: number;
 }
 
+/** Météo courante d'une carte (échelles planet/region) — cf. core/planet/weather.ts. */
+export type WeatherOverlay = "clair" | "brume" | "pluie" | "neige" | "poussiere" | "orage-ionique";
+export interface WeatherInfo {
+  label: string;
+  glyph: string;
+  overlay: WeatherOverlay;
+  intensity: number;
+}
+
 export interface MapData {
   version: 1;
   scale: Scale;
@@ -70,6 +79,8 @@ export interface MapData {
   atlasRef?: AtlasRef;
   /** Uniquement pour scale==="system" — rendu orbital dédié (systemView.ts). */
   stars?: StarInfo[];
+  /** Météo courante — scales planet/region (atmosphère extérieure). */
+  weather?: WeatherInfo;
 }
 
 // ── Atlas ────────────────────────────────────────────────────────────

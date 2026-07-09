@@ -12,6 +12,7 @@ import { createMap, groundAt, setOverlay, setGround } from "../mapdata";
 import { T } from "../tiles/tileset";
 import { makeValueNoise, fbm } from "../noise";
 import { biomeTileAt, resolvePlanetType } from "../planet/types";
+import { weatherFor } from "../planet/weather";
 
 export const PLANET_W = 96;
 export const PLANET_H = 72;
@@ -26,6 +27,7 @@ export function generatePlanet(seed: string, params: GenParams, w = PLANET_W, h 
   const rng = rngFor(seed, "planet");
   const map = createMap("planet", seed, params, w, h);
   const planet = resolvePlanetType(params);
+  map.weather = weatherFor(seed, planet.id);
 
   // Bruit plus grossier que region.ts (grille 5 au lieu de 16, 2 octaves au
   // lieu de 3) : la carte doit lire comme un monde entier, pas une région

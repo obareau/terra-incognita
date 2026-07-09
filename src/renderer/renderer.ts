@@ -123,6 +123,7 @@ function setMap(map: MapData, label: string, pushCrumb: boolean): void {
     pixelView.fit();
   }
   updateBreadcrumb();
+  $("weatherInfo").textContent = map.weather ? `${map.weather.glyph} ${map.weather.label}` : "";
   redraw();
   if (chiptune.playing) {
     chiptune.start(map.seed, map.params.ambiance);

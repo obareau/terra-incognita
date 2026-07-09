@@ -1,11 +1,12 @@
 // Vue pixel : la carte entière est rendue une fois dans un canvas offscreen
 // (16 px/cellule), puis blittée avec caméra + zoom entier, sans lissage.
 
-import type { MapData, PaletteName } from "../shared/types";
+import type { MapData, PaletteName, WeatherInfo } from "../shared/types";
 import { PALETTES } from "../core/palettes";
 import { TILE_PX, TRANSPARENT, renderTileArt } from "../core/tiles/tileart";
 import { TILESET, variantCount, type TileDef } from "../core/tiles/tileset";
 import { variantAt } from "../core/autotile";
+import { rngFor } from "../core/rng";
 
 export interface Camera {
   x: number; // px carte au coin haut-gauche
@@ -39,6 +40,72 @@ function buildTileCache(palette: readonly string[]): Map<number, ImageData[]> {
     cache.set(def.id, variants);
   }
   return cache;
+}
+
+/**
+ * Overlay météo — statique (aucune primitive d'animation dans ce rendu),
+ * baké une fois dans le canvas offscreen avec les tuiles, pas redessiné à
+ * chaque frame. Déterministe : seed dérivée de map.seed, donc stable pour
+ * une même carte, différente d'une génération à l'autre.
+ */
+function drawWeatherOverlay(
+  octx: CanvasRenderingContext2D, map: MapData, palette: readonly string[], w: number, h: number,
+): void {
+  const weather = map.weather as WeatherInfo;
+  if (weather.intensity <= 0) return;
+  const rng = rngFor(map.seed, "weather-fx");
+  const count = Math.round(weather.intensity * (w * h) / 900); // densité ∝ surface
+
+  if (weather.overlay === "neige") {
+    octx.fillStyle = palette[7] ?? palette[3];
+    for (let i = 0; i < count; i++) {
+      const r = 1 + rng() * 1.5;
+      octx.globalAlpha = 0.4 + rng() * 0.4;
+      octx.beginPath();
+      octx.arc(rng() * w, rng() * h, r, 0, Math.PI * 2);
+      octx.fill();
+    }
+  } else if (weather.overlay === "pluie") {
+    octx.strokeStyle = palette[1];
+    octx.lineWidth = 1;
+    for (let i = 0; i < count; i++) {
+      const x = rng() * w, y = rng() * h;
+      octx.globalAlpha = 0.25 + rng() * 0.35;
+      octx.beginPath();
+      octx.moveTo(x, y);
+      octx.lineTo(x - 3, y + 9);
+      octx.stroke();
+    }
+  } else if (weather.overlay === "poussiere") {
+    octx.fillStyle = palette[2];
+    for (let i = 0; i < count; i++) {
+      octx.globalAlpha = 0.15 + rng() * 0.25;
+      octx.fillRect(rng() * w, rng() * h, 2 + rng() * 3, 1);
+    }
+  } else if (weather.overlay === "orage-ionique") {
+    octx.strokeStyle = palette[7] ?? palette[3];
+    octx.lineWidth = 1;
+    const bolts = Math.max(1, Math.round(count / 30));
+    for (let i = 0; i < bolts; i++) {
+      let x = rng() * w, y = rng() * h * 0.4;
+      octx.globalAlpha = 0.5 + rng() * 0.4;
+      octx.beginPath();
+      octx.moveTo(x, y);
+      for (let s = 0; s < 4; s++) { x += (rng() - 0.5) * 14; y += 8 + rng() * 6; octx.lineTo(x, y); }
+      octx.stroke();
+    }
+  } else if (weather.overlay === "brume") {
+    octx.fillStyle = palette[3];
+    const patches = Math.max(3, Math.round(count / 20));
+    for (let i = 0; i < patches; i++) {
+      octx.globalAlpha = 0.05 + rng() * 0.06;
+      const r = 30 + rng() * 60;
+      octx.beginPath();
+      octx.arc(rng() * w, rng() * h, r, 0, Math.PI * 2);
+      octx.fill();
+    }
+  }
+  octx.globalAlpha = 1;
 }
 
 export class CanvasView {
@@ -92,6 +159,7 @@ export class CanvasView {
     drawLayer("ground");
     drawLayer("structure");
     drawLayer("overlay");
+    if (map.weather) drawWeatherOverlay(octx, map, palette, off.width, off.height);
     this.offscreen = off;
   }
 

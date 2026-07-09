@@ -9,6 +9,7 @@ import { stampMacro } from "../macros/index";
 import { cromlech, pyramideRuine } from "../macros/mysteres";
 import { makeValueNoise, fbm } from "../noise";
 import { resolvePlanetType, biomeTileAt, type PlanetType } from "../planet/types";
+import { weatherFor } from "../planet/weather";
 
 export const REGION_W = 128;
 export const REGION_H = 96;
@@ -109,6 +110,7 @@ export function generateRegion(seed: string, params: GenParams, w = REGION_W, h 
   const decay = makeValueNoise(rng, 16);
 
   const planet = resolvePlanetType(params);
+  map.weather = weatherFor(seed, planet.id);
   const fE = 6 / Math.max(w, h);
   const elev = new Float32Array(w * h);
   for (let y = 0; y < h; y++) {
