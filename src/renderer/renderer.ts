@@ -383,8 +383,15 @@ $<HTMLSelectElement>("palette").addEventListener("change", (e) => {
   state.palette = (e.target as HTMLSelectElement).value as PaletteName;
   applyPaletteToUi();
   if (state.map) {
-    pixelView.setMap(state.map, state.palette);
-    asciiView.setMap(state.map, state.palette);
+    // La vue système a son propre state.palette interne (couleurs
+    // étoile/planète) — sans cet appel, il reste figé sur l'ancienne
+    // palette : le sélecteur change visuellement mais le rendu orbital non.
+    if (isSystemScale()) {
+      systemView.setMap(state.map, state.palette);
+    } else {
+      pixelView.setMap(state.map, state.palette);
+      asciiView.setMap(state.map, state.palette);
+    }
     redraw();
   }
 });
