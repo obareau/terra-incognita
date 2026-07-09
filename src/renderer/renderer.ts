@@ -313,11 +313,40 @@ canvas.addEventListener("click", (e) => {
   const poi = state.map.pois.find((p) => Math.abs(p.x - cell.x) <= 1 && Math.abs(p.y - cell.y) <= 1);
   if (poi) descendTo(poi);
 });
+const ZOOM_MIN = 0.25;
+const ZOOM_MAX = 4;
+
 canvas.addEventListener("wheel", (e) => {
   e.preventDefault();
-  if (isSystemScale()) return; // scène système à échelle fixe, pas de zoom
   const rect = canvas.getBoundingClientRect();
+  if (isSystemScale()) {
+    // Vue orbitale à échelle fixe (pas de camera zoom) : un cran de molette
+    // avant sur une planète survolée descend directement dessus — donne la
+    // sensation de "plonger" dans le système comme un zoom continu. Recalculé
+    // depuis les coordonnées de l'évènement (pas la seule variable de survol)
+    // pour rester robuste même sans mousemove préalable.
+    const poi = systemView.findPlanetAt(e.clientX - rect.left, e.clientY - rect.top) ?? systemHighlight;
+    if (e.deltaY < 0 && poi) descendTo(poi);
+    return;
+  }
   autoFit = false;
+  const atMin = pixelView.camera.zoom <= ZOOM_MIN + 0.001;
+  const atMax = pixelView.camera.zoom >= ZOOM_MAX - 0.001;
+  if (e.deltaY > 0 && atMin) {
+    // Dézoomer au-delà du minimum de l'échelle courante : remonte d'un cran
+    // (ville→région, région→planète, planète→système…) — le zoom traverse
+    // les échelles au lieu de buter dessus.
+    goUp();
+    return;
+  }
+  if (e.deltaY < 0 && atMax) {
+    // Zoomer au-delà du maximum, sur un POI survolé : descend d'un cran.
+    const cell = pixelView.screenToCell(e.clientX - rect.left, e.clientY - rect.top);
+    const poi = cell && state.map
+      ? state.map.pois.find((p) => Math.abs(p.x - cell.x) <= 1 && Math.abs(p.y - cell.y) <= 1)
+      : null;
+    if (poi) { descendTo(poi); return; }
+  }
   pixelView.zoomAt(e.clientX - rect.left, e.clientY - rect.top, e.deltaY < 0 ? 1 : -1);
   redraw();
 }, { passive: false });
