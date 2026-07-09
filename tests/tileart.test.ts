@@ -3,12 +3,13 @@ import { TILESET, variantCount } from "../src/core/tiles/tileset";
 
 describe("pixel art procédural", () => {
   test("chaque tile rend un buffer 16×16 valide pour toutes ses variantes", () => {
+    // Palette 8 tons max (0-7) — cf. src/core/palettes.ts.
     for (const def of TILESET.values()) {
       for (let v = 0; v < variantCount(def); v++) {
         const art = renderTileArt(def.art, def.id, v);
         expect(art.length).toBe(TILE_PX * TILE_PX);
         for (const px of art) {
-          expect(px === TRANSPARENT || px <= 3).toBe(true);
+          expect(px === TRANSPARENT || px <= 7).toBe(true);
         }
       }
     }

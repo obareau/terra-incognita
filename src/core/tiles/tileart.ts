@@ -446,9 +446,11 @@ export const artBannerCgu: ArtRecipe = () => {
 export const artPoiCity: ArtRecipe = () => {
   // Fond opaque (au lieu de transparent) : le marqueur doit rester lisible
   // quel que soit le terrain en dessous, pas seulement sur un fond clair.
+  // Ton 7 (nouveau, distinct du ton 3 des toits) : un POI doit se voir
+  // au premier coup d'œil, pas juste avoir la même clarté qu'un bâtiment.
   const b = buf(0);
   rect(b, 2, 8, 4, 7, 2);
-  rect(b, 7, 5, 4, 10, 3);
+  rect(b, 7, 5, 4, 10, 7);
   rect(b, 12, 9, 3, 6, 2);
   set(b, 8, 6, 0); set(b, 8, 8, 0); set(b, 8, 10, 0);
   return b;
@@ -456,13 +458,13 @@ export const artPoiCity: ArtRecipe = () => {
 
 export const artPoiBase: ArtRecipe = () => {
   const b = buf(0); // fond opaque — cf. artPoiCity
-  // Chevron militaire.
+  // Chevron militaire — ton 7 (distinct des toits) pour le même motif qu'artPoiCity.
   for (let i = 0; i < 6; i++) {
-    set(b, 2 + i, 10 - i, 3); set(b, 3 + i, 10 - i, 3);
-    set(b, 13 - i, 10 - i, 3); set(b, 12 - i, 10 - i, 3);
+    set(b, 2 + i, 10 - i, 7); set(b, 3 + i, 10 - i, 7);
+    set(b, 13 - i, 10 - i, 7); set(b, 12 - i, 10 - i, 7);
   }
   hline(b, 2, 13, 12, 0);
-  hline(b, 2, 13, 13, 3);
+  hline(b, 2, 13, 13, 7);
   return b;
 };
 
