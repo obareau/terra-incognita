@@ -55,16 +55,18 @@ export const N = 1, E = 2, S = 4, W = 8;
 // ── Recettes : sols ──────────────────────────────────────────────────
 
 export const artGrass: ArtRecipe = (rng) => {
+  // Mouchetis réduit (14→8, 5→3) : à densité pleine, le bruit de texture
+  // du sol rivalisait visuellement avec les bâtiments/routes/POI.
   const b = buf(1);
-  speckle(b, rng, 2, 14);
-  speckle(b, rng, 0, 5);
+  speckle(b, rng, 2, 8);
+  speckle(b, rng, 0, 3);
   return b;
 };
 
 export const artDirt: ArtRecipe = (rng) => {
   const b = buf(1);
-  speckle(b, rng, 0, 12);
-  speckle(b, rng, 2, 4);
+  speckle(b, rng, 0, 7);
+  speckle(b, rng, 2, 3);
   return b;
 };
 
@@ -191,9 +193,11 @@ export const artWall: ArtRecipe = (rng, variant) => {
 };
 
 export const artWallMetal: ArtRecipe = (rng, variant) => {
-  const b = buf(1);
+  // Ton 3 (au lieu de 1, identique à l'herbe) : les murs métalliques
+  // martiaux doivent se détacher nettement du terrain environnant.
+  const b = buf(3);
   for (let y = 0; y < TILE_PX; y += 8) hline(b, 0, TILE_PX - 1, y, 0);
-  for (const [x, y] of [[2, 2], [13, 2], [2, 10], [13, 10]] as const) set(b, x, y, 3);
+  for (const [x, y] of [[2, 2], [13, 2], [2, 10], [13, 10]] as const) set(b, x, y, 1);
   speckle(b, rng, 2, 3);
   if (!(variant & N)) hline(b, 0, TILE_PX - 1, 0, 2);
   if (!(variant & W)) vline(b, 0, 0, TILE_PX - 1, 0);
@@ -251,7 +255,10 @@ export const artRoofHab: ArtRecipe = (rng, variant) => {
 };
 
 export const artRoofInd: ArtRecipe = (rng, variant) => {
-  const b = buf(1);
+  // Ton dominant relevé à 3 (tôle claire/réfléchissante) — au ton 1
+  // (identique à l'herbe), les toits industriels se fondaient dans le
+  // terrain à distance de vue normale.
+  const b = buf(3);
   // Tôle ondulée.
   for (let x = 1; x < TILE_PX; x += 3) vline(b, x, 1, TILE_PX - 2, 2);
   if (rng() < 0.25) { rect(b, 5, 5, 4, 4, 0); set(b, 6, 6, 3); } // cheminée
@@ -437,7 +444,9 @@ export const artBannerCgu: ArtRecipe = () => {
 };
 
 export const artPoiCity: ArtRecipe = () => {
-  const b = buf();
+  // Fond opaque (au lieu de transparent) : le marqueur doit rester lisible
+  // quel que soit le terrain en dessous, pas seulement sur un fond clair.
+  const b = buf(0);
   rect(b, 2, 8, 4, 7, 2);
   rect(b, 7, 5, 4, 10, 3);
   rect(b, 12, 9, 3, 6, 2);
@@ -446,7 +455,7 @@ export const artPoiCity: ArtRecipe = () => {
 };
 
 export const artPoiBase: ArtRecipe = () => {
-  const b = buf();
+  const b = buf(0); // fond opaque — cf. artPoiCity
   // Chevron militaire.
   for (let i = 0; i < 6; i++) {
     set(b, 2 + i, 10 - i, 3); set(b, 3 + i, 10 - i, 3);
@@ -458,7 +467,7 @@ export const artPoiBase: ArtRecipe = () => {
 };
 
 export const artPoiRuin: ArtRecipe = (rng) => {
-  const b = buf();
+  const b = buf(0); // fond opaque — cf. artPoiCity
   rect(b, 3, 6, 10, 8, 1);
   for (let x = 3; x < 13; x++) if (rng() < 0.4) set(b, x, 5 + Math.floor(rng() * 3), 1);
   vline(b, 8, 6, 13, 0);
