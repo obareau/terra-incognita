@@ -6,7 +6,7 @@
 ## Vision
 
 - **Full procédural** : une seed et des paramètres (`cguDensity`, factions, ambiance, ruine) génèrent une carte complète.
-- **3 échelles** : région/monde (état-major) → ville/quartier (style Zelda GB) → intérieur/tactique (BSP). Descente d'échelle déterministe par `childSeed`.
+- **4 échelles** : planète/monde (climat) → région/continent (état-major) → ville/quartier (style Zelda GB) → intérieur/tactique (BSP). Descente d'échelle déterministe par `childSeed`.
 - **Tiles générés par le code** : pixel art 16×16, palette 4 tons (phosphore / sépia / blueprint). Zéro asset externe.
 - **Macros** : prefabs déclarés en ASCII (caserne C.G.U., checkpoint, bloc d'habitation…) posés comme des Lego.
 - **Rendus** : canvas pixel lofi, vue ASCII/TUI, chiptune génératif WebAudio.
@@ -33,12 +33,16 @@
 | 12 | **Démo web GitHub Pages** : shim navigateur (exports, mode libre), déploiement auto sur push | https://obareau.github.io/terra-incognita/ | ✅ 2026-07-02 |
 | 13 | **Jukebox chiptune** : 6 genres (marche, hymne, blues, berceuse, drone, requiem), 5 morceaux/carte, structure couplet/refrain | requiem validé par Olivier | ✅ 2026-07-02 |
 | 14 | **Radio Robotariis** (side project, /radio/) : onde unique par TUNE IN (anniversaire × instant, salée à la seconde), grille horaire, speakerine Web Speech, annonces par grammaire combinatoire lore, compteur de lignes auto | https://obareau.github.io/terra-incognita/radio/ | ✅ 2026-07-02 |
+| 15 | **Échelle planète + climat/météo par type** : 4ᵉ échelle au-dessus de région (planet.ts, carte du monde grossière, POI continent→région / avant-poste→intérieur direct) ; `PlanetType` (tellurique/océanique/glaciale/gazeuse) mirror du pattern `ArchStyle`, cascade sur région (seuils/tuiles/densité végétale/POI) et ville (arbres/parcs) ; nouvelle tuile `T.SNOW` ; routing Atlas `planete`→`planet` (`systeme` reste sur `region`, hors périmètre) | déterminisme testé par type, `tellurique` = comportement historique inchangé bit à bit, cascade climat visible en descendant continent→région | ✅ 2026-07-09 |
 
-**MVP = phases 0–2 — atteint. v0.3.0 : styles de faction, monuments, web + radio.**
-53 tests jest verts. Chiptune : requiem validé à l'oreille ; les 5 autres genres restent à écouter.
+**MVP = phases 0–2 — atteint. v0.3.0 : styles de faction, monuments, web + radio. v0.4 (en cours) : planète + climat.**
+68 tests jest verts. Chiptune : requiem validé à l'oreille ; les 5 autres genres restent à écouter.
 
 ## Après v1 (idées)
 
+- **Échelle système** (au-dessus de planète) + étoiles doubles/triples et leur
+  nomenclature — explicitement hors périmètre de la phase 15, `systeme`
+  continue de router vers `region` sans changement pour l'instant.
 - WFC pour le remplissage organique des blocs de ville (v1.5)
 - Enrichissement par frontmatter du vault (`04-LIEUX/*.md` : population, contrôle)
 - Annotations manuelles légères (labels, flèches d'état-major)

@@ -75,11 +75,20 @@ export function mapNodeToParams(node: AtlasNode, graph: AtlasGraph): MappedNode 
 
   // ── Échelle suggérée ───────────────────────────────────────────────
   let scale: Scale = "city";
-  if (node.category === "planete" || node.category === "systeme") scale = "region";
+  if (node.category === "planete") scale = "planet";
+  else if (node.category === "systeme") scale = "region"; // hors périmètre — inchangé
   else if (has("station-orbitale") || has("bunker") || has("interieur")) scale = "interior";
 
+  // ── Type de planète, déduit des tags (uniquement pertinent si planet) ──
+  let planetType: string | undefined;
+  if (scale === "planet") {
+    if (has("glace") || has("glaciale")) planetType = "glaciale";
+    else if (has("ocean")) planetType = "oceanique";
+    else if (has("gazeuse") || has("geante")) planetType = "gazeuse";
+  }
+
   return {
-    params: { cguDensity, factions, ambiance, ruin },
+    params: { cguDensity, factions, ambiance, ruin, ...(planetType ? { planetType } : {}) },
     scale,
     label: node.label,
   };

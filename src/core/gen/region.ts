@@ -7,42 +7,11 @@ import { createMap, groundAt, setGround, setOverlay, setStructure, structureAt }
 import { T } from "../tiles/tileset";
 import { stampMacro } from "../macros/index";
 import { cromlech, pyramideRuine } from "../macros/mysteres";
+import { makeValueNoise, fbm } from "../noise";
+import { resolvePlanetType, biomeTileAt, type PlanetType } from "../planet/types";
 
 export const REGION_W = 128;
 export const REGION_H = 96;
-
-/** Bruit de valeur : grille de gradients aléatoires + interpolation lissée. */
-function makeValueNoise(rng: Rng, gridSize: number): (x: number, y: number) => number {
-  const values = new Float32Array(gridSize * gridSize);
-  for (let i = 0; i < values.length; i++) values[i] = rng();
-  const at = (gx: number, gy: number): number =>
-    values[((gy % gridSize + gridSize) % gridSize) * gridSize + ((gx % gridSize + gridSize) % gridSize)];
-  const smooth = (t: number): number => t * t * (3 - 2 * t);
-  return (x, y) => {
-    const gx = Math.floor(x);
-    const gy = Math.floor(y);
-    const fx = smooth(x - gx);
-    const fy = smooth(y - gy);
-    const a = at(gx, gy) * (1 - fx) + at(gx + 1, gy) * fx;
-    const b = at(gx, gy + 1) * (1 - fx) + at(gx + 1, gy + 1) * fx;
-    return a * (1 - fy) + b * fy;
-  };
-}
-
-/** fBm : superposition d'octaves de bruit de valeur. */
-function fbm(noise: (x: number, y: number) => number, x: number, y: number, octaves: number): number {
-  let sum = 0;
-  let amp = 1;
-  let norm = 0;
-  let f = 1;
-  for (let o = 0; o < octaves; o++) {
-    sum += noise(x * f, y * f) * amp;
-    norm += amp;
-    amp *= 0.5;
-    f *= 2;
-  }
-  return sum / norm;
-}
 
 interface RegionPoi {
   x: number;
@@ -108,7 +77,7 @@ function drawNazca(map: MapData, cx: number, cy: number): void {
 }
 
 /** Sème 1 à 3 sites mystérieux sur les terres dégagées. */
-function addMysteres(map: MapData, rng: Rng, seed: string, params: GenParams): void {
+function addMysteres(map: MapData, rng: Rng, seed: string, params: GenParams, planet: PlanetType): void {
   const count = 1 + (params.ruin > 0.3 ? 1 : 0) + (chance(rng, 0.5) ? 1 : 0);
   const kinds: MystereKind[] = ["crop-circle", "nazca", "cromlech", "pyramide"];
   for (let i = 0; i < count; i++) {
@@ -117,7 +86,7 @@ function addMysteres(map: MapData, rng: Rng, seed: string, params: GenParams): v
       const x = int(rng, 10, map.w - 11);
       const y = int(rng, 10, map.h - 11);
       const g = groundAt(map, x, y);
-      if (g === T.WATER || g === T.ROCK || g === T.ROAD) continue;
+      if (g === planet.water || g === planet.rock || g === T.ROAD) continue;
       if (map.pois.some((p) => Math.abs(p.x - x) + Math.abs(p.y - y) < 14)) continue;
       if (kind === "crop-circle") drawCropCircle(map, x, y);
       else if (kind === "nazca") drawNazca(map, x, y);
@@ -139,6 +108,7 @@ export function generateRegion(seed: string, params: GenParams, w = REGION_W, h 
   const humidity = makeValueNoise(rng, 16);
   const decay = makeValueNoise(rng, 16);
 
+  const planet = resolvePlanetType(params);
   const fE = 6 / Math.max(w, h);
   const elev = new Float32Array(w * h);
   for (let y = 0; y < h; y++) {
@@ -147,16 +117,12 @@ export function generateRegion(seed: string, params: GenParams, w = REGION_W, h 
       elev[y * w + x] = e;
       const hu = fbm(humidity, x * fE * 1.7 + 40, y * fE * 1.7 + 40, 2);
       const d = fbm(decay, x * fE * 2.3 + 80, y * fE * 2.3 + 80, 2);
-      let tile: number;
-      if (e < 0.38) tile = T.WATER;
-      else if (e < 0.42) tile = T.SAND;
-      else if (e > 0.74) tile = T.ROCK;
-      else if (d < params.ruin * 0.55) tile = d < params.ruin * 0.3 ? T.ASH : T.WASTE;
-      else if (hu > 0.52) tile = T.GRASS;
-      else tile = T.DIRT;
+      const tile = biomeTileAt(planet, e, hu, d, params.ruin);
       setGround(map, x, y, tile);
-      // Forêts sur les herbages humides.
-      if (tile === T.GRASS && hu > 0.62 && chance(rng, 0.35)) setStructure(map, x, y, T.TREE);
+      // Forêts sur les herbages humides (densité modulée par le climat).
+      if (tile === planet.groundWet && hu > 0.62 && chance(rng, 0.35 * planet.vegetationDensity)) {
+        setStructure(map, x, y, T.TREE);
+      }
     }
   }
 
@@ -167,7 +133,7 @@ export function generateRegion(seed: string, params: GenParams, w = REGION_W, h 
     for (let x = 0; x < w - 1; x++) {
       const i = y * w + x;
       const g = map.layers.ground[i];
-      if (g === T.WATER || g === T.SAND) continue; // pas d'isohypses en mer ni sur l'estran
+      if (g === planet.water || g === planet.beach) continue; // pas d'isohypses en mer ni sur l'estran
       if (level(i) !== level(i + 1) || level(i) !== level(i + w)) {
         map.layers.overlay[i] = T.CONTOUR;
       }
@@ -175,11 +141,16 @@ export function generateRegion(seed: string, params: GenParams, w = REGION_W, h 
   }
 
   // ── POI : villes, bases C.G.U., ruines ─────────────────────────────
+  // Comptes biaisés LOCALEMENT par le climat (habitabilité/cgu/ruin) —
+  // params.cguDensity/ruin eux-mêmes ne sont jamais mutés.
+  const clamp01 = (v: number): number => Math.max(0, Math.min(1, v));
+  const localCgu = clamp01(params.cguDensity + planet.cguBias);
+  const localRuin = clamp01(params.ruin + planet.ruinBias);
   const pois: RegionPoi[] = [];
   const wanted: [RegionPoi["kind"], number][] = [
-    ["city", int(rng, 4, 6)],
-    ["base", Math.max(1, Math.round(params.cguDensity * 5))],
-    ["ruin", Math.round(params.ruin * 5)],
+    ["city", Math.round(int(rng, 4, 6) * planet.habitability)],
+    ["base", Math.max(1, Math.round(localCgu * 5))],
+    ["ruin", Math.round(localRuin * 5)],
   ];
   const minDist = 14;
   for (const [kind, count] of wanted) {
@@ -189,7 +160,7 @@ export function generateRegion(seed: string, params: GenParams, w = REGION_W, h 
         const x = int(rng, 4, w - 5);
         const y = int(rng, 4, h - 5);
         const g = groundAt(map, x, y);
-        if (g === T.WATER || g === T.ROCK) continue;
+        if (g === planet.water || g === planet.rock) continue;
         if (pois.some((p) => Math.abs(p.x - x) + Math.abs(p.y - y) < minDist)) continue;
         pois.push({ x, y, kind });
         break;
@@ -222,14 +193,14 @@ export function generateRegion(seed: string, params: GenParams, w = REGION_W, h 
   }
 
   // ── Sites mystérieux : vestiges d'avant la Rectitude ───────────────
-  addMysteres(map, rng, seed, params);
+  addMysteres(map, rng, seed, params, planet);
 
   // Zones contestées entre factions rivales.
   if (params.factions.length > 1) {
     for (let i = 0; i < 4; i++) {
       const x = int(rng, 4, w - 5);
       const y = int(rng, 4, h - 5);
-      if (structureAt(map, x, y) === 0 && groundAt(map, x, y) !== T.WATER) setOverlay(map, x, y, T.CONTESTED);
+      if (structureAt(map, x, y) === 0 && groundAt(map, x, y) !== planet.water) setOverlay(map, x, y, T.CONTESTED);
     }
   }
 

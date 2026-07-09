@@ -11,7 +11,7 @@ function hashMap(map: MapData): number {
   return h >>> 0;
 }
 
-const scales: Scale[] = ["region", "city", "interior"];
+const scales: Scale[] = ["planet", "region", "city", "interior"];
 
 describe("déterminisme de la génération", () => {
   for (const scale of scales) {

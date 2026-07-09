@@ -1,6 +1,6 @@
 // Types partagés entre main, preload, renderer et core.
 
-export type Scale = "region" | "city" | "interior";
+export type Scale = "planet" | "region" | "city" | "interior";
 
 export type Ambiance =
   | "militaire"    // zone C.G.U. verrouillée
@@ -22,6 +22,8 @@ export interface GenParams {
   ruin: number;
   /** Override manuel du style d'architecture (sinon : faction dominante). */
   archStyle?: string;
+  /** Override manuel du type de planète — climat/météo (sinon : tellurique). */
+  planetType?: string;
   biome?: string;
   population?: number;
 }

@@ -49,12 +49,14 @@ const chiptune = new Chiptune();
 
 function readParams(): GenParams {
   const arch = $<HTMLSelectElement>("archStyle").value;
+  const planetType = $<HTMLSelectElement>("planetType").value;
   return {
     ...DEFAULT_PARAMS,
     cguDensity: parseFloat($<HTMLInputElement>("cgu").value),
     ruin: parseFloat($<HTMLInputElement>("ruin").value),
     ambiance: $<HTMLSelectElement>("ambiance").value as Ambiance,
     ...(arch ? { archStyle: arch } : {}),
+    ...(planetType ? { planetType } : {}),
   };
 }
 
@@ -63,6 +65,7 @@ function writeParams(p: GenParams): void {
   $<HTMLInputElement>("ruin").value = String(p.ruin);
   $<HTMLSelectElement>("ambiance").value = p.ambiance;
   $<HTMLSelectElement>("archStyle").value = p.archStyle ?? "";
+  $<HTMLSelectElement>("planetType").value = p.planetType ?? "";
   syncSliderLabels();
 }
 
@@ -136,7 +139,7 @@ function descendTo(poiLabel: string, kind: string, childSeed: string): void {
   const next = childScale(state.map.scale, kind);
   if (!next) return;
   const params = { ...state.map.params };
-  if (kind === "base" || kind === "qg" || kind === "caserne") {
+  if (kind === "base" || kind === "qg" || kind === "caserne" || kind === "avant-poste") {
     params.ambiance = "militaire";
     params.cguDensity = Math.max(params.cguDensity, 0.7);
   } else if (kind === "usine") {

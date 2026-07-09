@@ -28,7 +28,7 @@ export const T = {
   VOID: 0,
   // Sols
   GRASS: 1, DIRT: 2, SAND: 3, WATER: 4, ROCK: 5, WASTE: 6, ASH: 7,
-  ROAD: 8, PLAZA: 9, FLOOR_CONC: 10, FLOOR_METAL: 11, RUBBLE: 12,
+  ROAD: 8, PLAZA: 9, FLOOR_CONC: 10, FLOOR_METAL: 11, RUBBLE: 12, SNOW: 13,
   // Structures
   WALL: 20, WALL_METAL: 21, FENCE: 22, DOOR: 23, GATE: 24,
   ROOF_HAB: 25, ROOF_IND: 26, MIRADOR: 27, BARRIER: 28,
@@ -55,6 +55,7 @@ const defs: TileDef[] = [
   { id: T.FLOOR_CONC, name: "sol béton", layer: "ground", walkable: true, glyph: ".", colorRole: 1, variants: 3, art: art.artFloorConc },
   { id: T.FLOOR_METAL, name: "sol métal", layer: "ground", walkable: true, glyph: "_", colorRole: 1, art: art.artFloorMetal },
   { id: T.RUBBLE, name: "gravats", layer: "ground", walkable: true, glyph: ";", colorRole: 1, variants: 4, art: art.artRubble },
+  { id: T.SNOW, name: "neige", layer: "ground", walkable: true, glyph: "'", colorRole: 3, variants: 3, art: art.artSnow },
 
   { id: T.WALL, name: "mur", layer: "structure", walkable: false, glyph: "█", colorRole: 2, autotile: true, connects: "wall", art: art.artWall },
   { id: T.WALL_METAL, name: "mur métal", layer: "structure", walkable: false, glyph: "▓", colorRole: 2, autotile: true, connects: "wall", art: art.artWallMetal },

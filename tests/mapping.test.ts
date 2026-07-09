@@ -36,10 +36,23 @@ describe("mapping Atlas → GenParams", () => {
     expect(mapped.params.cguDensity).toBeLessThan(0.3);
   });
 
-  test("planète → échelle région", () => {
+  test("planète → échelle planète", () => {
     const node: AtlasNode = { id: "terre", label: "Terre", category: "planete", tags: [] };
     const mapped = mapNodeToParams(node, makeGraph([node], []));
+    expect(mapped.scale).toBe("planet");
+  });
+
+  test("système → échelle région (hors périmètre, inchangé)", () => {
+    const node: AtlasNode = { id: "sigma", label: "Sigma", category: "systeme", tags: [] };
+    const mapped = mapNodeToParams(node, makeGraph([node], []));
     expect(mapped.scale).toBe("region");
+  });
+
+  test("planète taguée glace → planetType glaciale", () => {
+    const node: AtlasNode = { id: "hoth", label: "Hoth", category: "planete", tags: ["glace"] };
+    const mapped = mapNodeToParams(node, makeGraph([node], []));
+    expect(mapped.scale).toBe("planet");
+    expect(mapped.params.planetType).toBe("glaciale");
   });
 
   test("factions ennemies présentes → zones contestées possibles", () => {

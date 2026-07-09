@@ -114,6 +114,13 @@ export const artAsh: ArtRecipe = (rng) => {
   return b;
 };
 
+export const artSnow: ArtRecipe = (rng) => {
+  const b = buf(3);
+  speckle(b, rng, 2, 14);
+  speckle(b, rng, 0, 3);
+  return b;
+};
+
 export const artRoad: ArtRecipe = (rng, variant) => {
   const b = buf(0);
   speckle(b, rng, 1, 8);

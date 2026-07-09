@@ -10,6 +10,7 @@ import { areaIsFree, macroSize, stampMacro, type Macro } from "../macros/index";
 import { caserne, checkpoint, depot, grandMemorial, memorial, qgCgu } from "../macros/cgu";
 import { courUsine, marche, marcheNoir, parc } from "../macros/civil";
 import { resolveStyle, type ArchStyle } from "../factions/styles";
+import { resolvePlanetType } from "../planet/types";
 
 export const CITY_W = 96;
 export const CITY_H = 96;
@@ -38,12 +39,13 @@ function avenuePositions(rng: Rng, size: number): number[] {
 }
 
 function zoneWeights(params: GenParams, style: ArchStyle): Record<Zone, number> {
+  const vegetationDensity = resolvePlanetType(params).vegetationDensity;
   const base: Record<Zone, number> = {
     militaire: 0.5 + params.cguDensity * 4,
     habitat: 3,
     industrie: params.ambiance === "industriel" ? 4 : 1.5,
     marche: params.ambiance === "clandestin" ? 3 : 1.2,
-    parc: params.ambiance === "ruine" ? 0.2 : 0.8,
+    parc: (params.ambiance === "ruine" ? 0.2 : 0.8) * vegetationDensity,
     ruine: 0.2 + params.ruin * 4,
   };
   for (const z of Object.keys(base) as Zone[]) {
@@ -255,8 +257,8 @@ export function generateCity(seed: string, params: GenParams, w = CITY_W, h = CI
     const y = int(rng, 1, h - 2);
     if (structureAt(map, x, y) === 0) setOverlay(map, x, y, T.GRAFFITI);
   }
-  // Végétation urbaine (les Jardins verdissent tout).
-  const trees = Math.round(50 * style.decor.tree);
+  // Végétation urbaine (les Jardins verdissent tout ; climat glacial/gazeux = aucune).
+  const trees = Math.round(50 * style.decor.tree * resolvePlanetType(params).vegetationDensity);
   for (let i = 0; i < trees; i++) {
     const x = int(rng, 1, w - 2);
     const y = int(rng, 1, h - 2);

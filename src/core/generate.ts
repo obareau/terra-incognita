@@ -3,6 +3,7 @@
 import type { GenParams, MapData, Scale } from "../shared/types";
 import { generateCity } from "./gen/city";
 import { generateInterior } from "./gen/interior";
+import { generatePlanet } from "./gen/planet";
 import { generateRegion } from "./gen/region";
 
 export const DEFAULT_PARAMS: GenParams = {
@@ -14,6 +15,7 @@ export const DEFAULT_PARAMS: GenParams = {
 
 export function generate(scale: Scale, seed: string, params: GenParams): MapData {
   switch (scale) {
+    case "planet": return generatePlanet(seed, params);
     case "region": return generateRegion(seed, params);
     case "city": return generateCity(seed, params);
     case "interior": return generateInterior(seed, params);
@@ -24,6 +26,9 @@ export function generate(scale: Scale, seed: string, params: GenParams): MapData
 export function childScale(scale: Scale, poiKind: string): Scale | null {
   // Les sites mystérieux et mémoriaux se contemplent — pas de descente.
   if (poiKind === "mystere" || poiKind === "memorial") return null;
+  if (scale === "planet") {
+    return poiKind === "avant-poste" ? "interior" : "region";
+  }
   if (scale === "region") {
     return poiKind === "base" ? "interior" : "city";
   }

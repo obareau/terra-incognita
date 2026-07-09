@@ -107,7 +107,8 @@
         </div>
         <label for="scale">Échelle</label>
         <select id="scale">
-          <option value="region">Région / monde</option>
+          <option value="planet">Planète / monde</option>
+          <option value="region">Région / continent</option>
           <option value="city" selected>Ville / quartier</option>
           <option value="interior">Intérieur / tactique</option>
         </select>
@@ -148,6 +149,14 @@
           <option value="organique">Organique — Gardiens des Jardins</option>
           <option value="industriel">Industriel — Magnats</option>
           <option value="civique">Civique — Archivistes</option>
+        </select>
+        <label for="planetType">Type de planète</label>
+        <select id="planetType">
+          <option value="" selected>Auto (tellurique)</option>
+          <option value="tellurique">Tellurique / rocheuse</option>
+          <option value="oceanique">Océanique</option>
+          <option value="glaciale">Glaciale</option>
+          <option value="gazeuse">Gazeuse (géante)</option>
         </select>
       </fieldset>
       <fieldset>
