@@ -54,3 +54,14 @@
 
 - Choix retenus/écartés et échecs : [DECISIONS.md](DECISIONS.md)
 - L'Atlas (base de lore) est un outil local privé — API `GET /api/graph`, port 5557, surchargeable via `ATLAS_URL`.
+
+## Demandes externes (Argus)
+
+<!-- argus:begin -->
+- [ ] ⚑ 9+ commits non publiés
+      _pourquoi : dernière version 0.1.0 datée du 2026-07-08_
+- [ ] ⚑ Génération d'affiches personnalisées
+      _pourquoi : Pour améliorer la qualité visuelle des communiqués C.G.U., je devrais pouvoir générer des affiches personnalisées avec des éléments graphiques spécifiques à chaque faction ou personnage._
+- [ ] ⚑ Intégration de l'Atlas
+      _pourquoi : Pour assurer une cohérence entre mes cartes et le reste du lore Robotariis, je devrais intégrer les informations fournies par l'Atlas._
+<!-- argus:end -->
