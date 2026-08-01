@@ -1,0 +1,2 @@
+# Ce que ce projet déclare à Argus. Le projet déclare, Argus vérifie.
+tests: npm test --silent
