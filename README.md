@@ -1,6 +1,6 @@
 # Terra-Incognita
 
-> **Générateur de cartes procédural rétrofuturiste** pour l'univers **ROBOTARIIS**.
+> **Générateur de cartes procédural rétrofuturiste** pour l'univers **ROBŌTARIIS**.
 > Une seed + le lore de l'Atlas → une carte pixel art 1940-1960 sous contrôle martial du C.G.U.
 
 ![Status](https://img.shields.io/badge/status-MVP-brightgreen)
@@ -10,7 +10,7 @@
 **▶ [Démo web jouable](https://obareau.github.io/terra-incognita/)** — génération, vues pixel/ASCII,
 chiptune et exports dans le navigateur (mode libre ; le lien Atlas ⇄ est réservé à l'app desktop).
 
-**📻 [Radio Robotariis](https://obareau.github.io/terra-incognita/radio/)** — jukebox chiptune généré
+**📻 [Radio Robōtariis](https://obareau.github.io/terra-incognita/radio/)** — jukebox chiptune généré
 à la volée, avec speakerine en synthèse vocale : votre date de naissance × l'instant où vous allumez
 le poste = votre onde personnelle. La grille des programmes suit l'heure (marches le matin, blues
 clandestin le soir, requiems la nuit) — et chaque onde ne s'entend qu'une seule fois dans une vie.
@@ -125,4 +125,4 @@ exactement la même carte, même si le mapping heuristique évolue. La publicati
 - [ROADMAP.md](ROADMAP.md) — phases, jalons, idées post-v1
 - [DECISIONS.md](DECISIONS.md) — choix retenus, **options écartées et pièges rencontrés**
 
-Fait partie de l'écosystème **ROBOTARIIS** (Atlas, timeline, radio…).
+Fait partie de l'écosystème **ROBŌTARIIS** (Atlas, timeline, radio…).
